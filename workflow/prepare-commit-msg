@@ -1,0 +1,25 @@
+#!/bin/zsh
+
+# Based on https://mincong.io/2019/07/23/prepare-commit-message-using-git-hook/
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA1=$3
+
+# Only add custom message when there is no commit source
+# ($COMMIT_SOURCE is empty). Otherwise, keep the default message
+# proposed by Git. Possible commit source: message, template,
+# merge, squash or commit. See https://git-scm.com/docs/githooks
+if [[ -z "$COMMIT_SOURCE" ]]
+then
+  hint=$(less "$COMMIT_MSG_FILE")
+  echo '\n\n\n' > "$COMMIT_MSG_FILE"
+  cargo test
+  if (( $? ))
+  then
+    echo "cargo test FAILED" >> "$COMMIT_MSG_FILE"
+  else
+    echo "cargo test OK" >> "$COMMIT_MSG_FILE"
+  fi
+  echo "$hint" >> "$COMMIT_MSG_FILE"
+fi
