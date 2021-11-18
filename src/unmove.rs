@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use regex::{Match, Regex};
+use regex::Regex;
 use shakmaty::{Role, Square};
 use std::str::FromStr;
 
@@ -74,11 +74,29 @@ impl UnMove {
         })
     }
 
+    pub fn to_retro_uci(&self) -> String {
+        format!(
+            "{}{}{}{}",
+            match self.special_move {
+                Some(SpecialMove::UnPromotion) => "U".to_owned(),
+                Some(SpecialMove::EnPassant) => "E".to_owned(),
+                _ => "".to_owned(),
+            },
+            self.uncapture
+                .map(|role| role.upper_char().to_string())
+                .unwrap_or("".to_owned()),
+            self.from,
+            self.to
+        )
+    }
+
+    #[inline]
     pub fn is_unpromotion(&self) -> bool {
         self.special_move
             .map_or(false, |x| x == SpecialMove::UnPromotion)
     }
 
+    #[inline]
     pub fn is_en_passant(&self) -> bool {
         self.special_move
             .map_or(false, |x| x == SpecialMove::EnPassant)
@@ -119,5 +137,13 @@ mod tests {
         assert_eq!(simple_move.from, Square::E3);
         assert_eq!(simple_move.to, Square::D4);
         assert!(simple_move.is_en_passant());
+    }
+
+    #[test]
+    fn test_to_uci() {
+        for x in &["e2e4", "Pe2e4", "Ue8e7", "Ee3d4", "Qa1a2", "Ba1a2", "Nd4d5"] {
+            let unmove: UnMove = UnMove::from_retro_uci("Ee3d4").unwrap();
+            assert_eq!(x, unmove.to_retro_uci())
+        }
     }
 }
