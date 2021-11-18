@@ -65,7 +65,7 @@ impl UnMove {
                     .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
                 uncapture: cap
                     .name("uncapture")
-                    .and_then(|x| Role::from_char(x.as_str().chars().next().unwrap())),
+                    .and_then(|x| x.as_str().chars().next()).and_then(Role::from_char),
                 special_move: cap
                     .name("special_move")
                     .and_then(|x| SpecialMove::from_str(x.as_str()).ok()),
