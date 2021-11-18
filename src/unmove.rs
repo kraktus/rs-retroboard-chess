@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn test_to_uci() {
         for x in &["e2e4", "Pe2e4", "Ue8e7", "Ee3d4", "Qa1a2", "Ba1a2", "Nd4d5"] {
-            let unmove: UnMove = UnMove::from_retro_uci("Ee3d4").unwrap();
+            let unmove: UnMove = UnMove::from_retro_uci(x).unwrap();
             assert_eq!(*x, &unmove.to_retro_uci())
         }
     }
