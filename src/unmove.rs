@@ -59,15 +59,13 @@ impl UnMove {
             Some(UnMove {
                 from: cap
                     .name("from")
-                    .map(|x| Square::from_ascii(x.as_str().as_bytes()).ok())
-                    .flatten()?,
+                    .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
                 to: cap
                     .name("to")
-                    .map(|x| Square::from_ascii(x.as_str().as_bytes()).ok())
-                    .flatten()?,
+                    .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
                 uncapture: cap
                     .name("uncapture")
-                    .map(|x| Role::from_char(x.as_str().chars().next().unwrap()))?,
+                    .and_then(|x| Role::from_char(x.as_str().chars().next().unwrap())),
                 special_move: cap
                     .name("special_move")
                     .and_then(|x| SpecialMove::from_str(x.as_str()).ok()),
