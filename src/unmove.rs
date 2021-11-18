@@ -10,7 +10,7 @@ pub struct ParseRetroUciError;
 #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub enum SpecialMove {
     EnPassant,
-    Unpromotion,
+    UnPromotion,
 }
 
 impl FromStr for SpecialMove {
@@ -18,7 +18,7 @@ impl FromStr for SpecialMove {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "U" => Ok(SpecialMove::Unpromotion),
+            "U" => Ok(SpecialMove::UnPromotion),
             "E" => Ok(SpecialMove::EnPassant),
             _ => Err(ParseRetroUciError),
         }
@@ -27,10 +27,10 @@ impl FromStr for SpecialMove {
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub struct UnMove {
-    from: Square,
-    to: Square,
-    uncapture: Option<Role>,
-    special_move: Option<SpecialMove>,
+    pub from: Square,
+    pub to: Square,
+    pub uncapture: Option<Role>,
+    pub special_move: Option<SpecialMove>,
 }
 
 impl UnMove {
@@ -47,13 +47,13 @@ impl UnMove {
     /// When a move is en-passsant, it cannot Uncapture anything (since the pawn uncapture is already implied)
     /// e.g "Ed6e5". Note than it's different than "Pd6e5". In the first example, the uncaptured pawn is in `d5`,
     /// while in the second one it's in `d6`.
-
+    ///
     /// regex: r"[UE]?[NBRQ]?([abcdefgh][1-8]){2}"
-
+    ///
     /// Note: A unmove being accepted does not means it is for sure legal, just syntaxically correct
-    fn from_retro_uci(retro_uci: &str) -> Option<UnMove> {
+    pub fn from_retro_uci(retro_uci: &str) -> Option<UnMove> {
         lazy_static! {
-        static ref UNMOVE_REGEX: Regex = Regex::new(r"^(?P<special_move>[UE]?)(?P<uncapture>[PNBRQ]?)(?P<from>([abcdefgh][1-8])(?P<to>([abcdefgh][1-8]))$").unwrap();
+        static ref UNMOVE_REGEX: Regex = Regex::new(r"^(?P<special_move>[UE]?)(?P<uncapture>[PNBRQ]?)(?P<from>([abcdefgh][1-8]))(?P<to>([abcdefgh][1-8]))$").unwrap();
         }
         UNMOVE_REGEX.captures(retro_uci).and_then(|cap| {
             Some(UnMove {
@@ -65,11 +65,59 @@ impl UnMove {
                     .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
                 uncapture: cap
                     .name("uncapture")
-                    .and_then(|x| x.as_str().chars().next()).and_then(Role::from_char),
+                    .and_then(|x| x.as_str().chars().next())
+                    .and_then(Role::from_char),
                 special_move: cap
                     .name("special_move")
                     .and_then(|x| SpecialMove::from_str(x.as_str()).ok()),
             })
         })
+    }
+
+    pub fn is_unpromotion(&self) -> bool {
+        self.special_move
+            .map_or(false, |x| x == SpecialMove::UnPromotion)
+    }
+
+    pub fn is_en_passant(&self) -> bool {
+        self.special_move
+            .map_or(false, |x| x == SpecialMove::EnPassant)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_retro_uci_simple_move() {
+        let simple_move: UnMove = UnMove::from_retro_uci("e2e4").unwrap();
+        assert_eq!(simple_move.from, Square::E2);
+        assert_eq!(simple_move.to, Square::E4);
+        assert_eq!(simple_move.uncapture, None);
+    }
+
+    #[test]
+    fn test_parse_retro_uci_uncapture() {
+        let simple_move: UnMove = UnMove::from_retro_uci("Pe2e4").unwrap();
+        assert_eq!(simple_move.from, Square::E2);
+        assert_eq!(simple_move.to, Square::E4);
+        assert_eq!(simple_move.uncapture.unwrap(), Role::Pawn);
+    }
+
+    #[test]
+    fn test_parse_retro_uci_unpromotion() {
+        let simple_move: UnMove = UnMove::from_retro_uci("Ue8e7").unwrap();
+        assert_eq!(simple_move.from, Square::E8);
+        assert_eq!(simple_move.to, Square::E7);
+        assert!(simple_move.is_unpromotion());
+    }
+
+    #[test]
+    fn test_parse_retro_uci_en_passant() {
+        let simple_move: UnMove = UnMove::from_retro_uci("Ee3d4").unwrap();
+        assert_eq!(simple_move.from, Square::E3);
+        assert_eq!(simple_move.to, Square::D4);
+        assert!(simple_move.is_en_passant());
     }
 }
