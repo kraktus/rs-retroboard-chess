@@ -8,7 +8,7 @@ pub struct ParseRetroPocketError;
 /// It stores the pieces than can be uncaptured by each color.    
 /// `self.unpromotion` is the number of pieces than can unpromote into a pawn.
 /// By default it is set to 0
-#[derive(Eq, PartialEq, Clone, Debug, Copy, Hash)]
+#[derive(Eq, PartialEq, Clone, Debug, Hash)]
 pub struct RetroPocket {
     pub pawn: u8,
     pub knight: u8,
@@ -76,7 +76,7 @@ impl FromStr for RetroPocket {
     }
 }
 
-#[derive(Eq, PartialEq, Clone, Debug, Copy, Hash)]
+#[derive(Eq, PartialEq, Clone, Debug, Hash)]
 pub struct RetroPockets {
     black: RetroPocket,
     white: RetroPocket,

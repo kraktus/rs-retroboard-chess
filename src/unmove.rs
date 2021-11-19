@@ -8,7 +8,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug)]
 pub struct ParseRetroUciError;
 
-#[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum SpecialMove {
     EnPassant,
     UnPromotion,

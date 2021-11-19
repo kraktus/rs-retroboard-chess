@@ -1,12 +1,14 @@
-use shakmaty::{Board, Color, Color::Black, Color::White};
+use shakmaty::Piece;
+use shakmaty::{Board, Color, Color::Black, Color::White, Role};
 
-use crate::RetroPockets;
+use crate::{RetroPockets, UnMove};
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)] // Copy?
 pub struct RetroBoard {
     board: Board,
     retro_turn: Color,
     pockets: RetroPockets,
+    // TODO en-passant, and halfmove clock.
 }
 
 /// A `Board` where `Unmove` are played and all legal `Unmove` can be generated, on top of every thing a `Board` can do.
@@ -26,6 +28,33 @@ impl RetroBoard {
             retro_turn,
             pockets,
         })
+    }
+
+    pub fn push(&mut self, m: UnMove) {
+        let moved_piece = self
+            .board
+            .remove_piece_at(m.from)
+            .expect("Unmove: from square should contain a piece");
+        self.board.set_piece_at(m.to, moved_piece);
+        if let Some(role) = m.uncapture {
+            self.board.set_piece_at(
+                m.from,
+                Piece {
+                    role,
+                    color: !self.retro_turn,
+                },
+            )
+        };
+        if m.is_unpromotion() {
+            self.board.set_piece_at(
+                m.from,
+                Piece {
+                    role: Role::Pawn,
+                    color: !self.retro_turn,
+                },
+            )
+        }
+        // TODO en-passant, and halfmove clock.
     }
 }
 
