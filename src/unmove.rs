@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 use shakmaty::{Role, Square};
+use std::fmt;
 use std::str::FromStr;
 
 /// Error when parsing an invalid retro UCI.
@@ -25,7 +26,7 @@ impl FromStr for SpecialMove {
     }
 }
 
-#[derive(Debug, Hash, Eq, PartialEq, Clone)]
+#[derive(Hash, Eq, PartialEq, Clone)]
 pub struct UnMove {
     pub from: Square,
     pub to: Square,
@@ -103,6 +104,12 @@ impl UnMove {
     }
 }
 
+impl fmt::Debug for UnMove {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.to_retro_uci())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,7 +150,8 @@ mod tests {
     fn test_to_uci() {
         for x in &["e2e4", "Pe2e4", "Ue8e7", "Ee3d4", "Qa1a2", "Ba1a2", "Nd4d5"] {
             let unmove: UnMove = UnMove::from_retro_uci(x).unwrap();
-            assert_eq!(*x, &unmove.to_retro_uci())
+            assert_eq!(*x, &unmove.to_retro_uci());
+            assert_eq!(format!("{:?}", unmove), *x);
         }
     }
 }
