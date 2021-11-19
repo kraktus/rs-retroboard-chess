@@ -5,4 +5,4 @@ mod retroboard;
 pub use crate::retroboard::RetroBoard;
 
 mod retropocket;
-pub use crate::retropocket::RetroPocket;
+pub use crate::retropocket::RetroPockets;

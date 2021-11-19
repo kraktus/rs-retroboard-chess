@@ -1,5 +1,5 @@
+use shakmaty::{Color, Color::Black, Color::White};
 use std::str::FromStr;
-
 /// Error when parsing an invalid retro UCI.
 #[derive(Clone, Debug)]
 pub struct ParseRetroPocketError;
@@ -72,6 +72,35 @@ impl FromStr for RetroPocket {
             rook,
             queen,
             unpromotion: unpromotion.unwrap_or(0),
+        })
+    }
+}
+
+#[derive(Eq, PartialEq, Clone, Debug, Copy, Hash)]
+pub struct RetroPockets {
+    black: RetroPocket,
+    white: RetroPocket,
+}
+
+impl RetroPockets {
+    pub fn turn(&mut self, c: Color) -> &mut RetroPocket {
+        match c {
+            White => &mut self.white,
+            Black => &mut self.black,
+        }
+    }
+
+    pub fn new() -> Self {
+        Self {
+            white: RetroPocket::new(),
+            black: RetroPocket::new(),
+        }
+    }
+
+    pub fn from_str(white: &str, black: &str) -> Result<Self, ParseRetroPocketError> {
+        Ok(Self {
+            white: RetroPocket::from_str(white)?,
+            black: RetroPocket::from_str(black)?,
         })
     }
 }
