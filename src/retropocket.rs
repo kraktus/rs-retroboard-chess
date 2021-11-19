@@ -1,5 +1,3 @@
-use shakmaty::{Board, Color, Color::Black, Color::White, Role};
-
 use std::str::FromStr;
 
 /// Error when parsing an invalid retro UCI.
