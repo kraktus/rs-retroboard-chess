@@ -53,7 +53,8 @@ impl RetroBoard {
                     role,
                     color: !self.retro_turn,
                 },
-            )
+            );
+            self.pockets.turn(!self.retro_turn).decr(role);
         };
         if m.is_unpromotion() {
             self.halfmoves = 0;
@@ -135,10 +136,17 @@ mod tests {
 
     #[test]
     fn new_no_pockets() {
-        assert!(RetroBoard::new_no_pockets(
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-        )
-        .is_some())
+        let r =
+            RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+                .expect("Retroboard bc fen is legal");
+        assert_eq!(r.retro_turn, Black);
+        assert_eq!(
+            r.board,
+            Board::from_board_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR".as_bytes())
+                .unwrap()
+        );
+        assert_eq!(r.pockets, RetroPockets::new());
+        assert_eq!(r.halfmoves, 0);
     }
 
     #[test]
@@ -154,7 +162,8 @@ mod tests {
     #[test]
     fn test_push_uncapture() {
         for piece in "PNBRQ".chars() {
-            let mut r = RetroBoard::new_no_pockets("4k3/r7/8/8/8/8/8/4K3 w - - 0 1").unwrap();
+            let mut r =
+                RetroBoard::new("4k3/r7/8/8/8/8/8/4K3 w - - 0 1", &piece.to_string(), "").unwrap();
             r.push(u(&format!("{}a7a2", piece)));
             assert_eq!(
                 r,
@@ -163,14 +172,4 @@ mod tests {
             )
         }
     }
-
-    // def test_uncapture_retropush_unmove(self):
-    // for piece in "NBRQ":
-    //     with self.subTest(piece=piece):
-    //         retrogradeboard = RetrogradeBoard(fen="r3k3/8/8/8/8/8/8/4K3 w - - 0 1", pocket_w=piece)
-    //         unmove = UnMove.from_retro_uci(f"{piece}a8a2")
-    //         retrogradeboard.retropush(unmove)
-    //         retrogradeboard_2 = RetrogradeBoard(fen=f"{piece}3k3/8/8/8/8/8/r7/4K3 b - - 0 2")
-    //         self.assertTrue(retrogradeboard.is_valid())
-    //         self.assertEqual(retrogradeboard, retrogradeboard_2)
 }

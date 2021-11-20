@@ -1,4 +1,4 @@
-use shakmaty::{Color, Color::Black, Color::White};
+use shakmaty::{Color, Color::Black, Color::White, Role};
 use std::fmt;
 use std::fmt::Write;
 use std::str::FromStr;
@@ -29,6 +29,17 @@ impl RetroPocket {
             rook: 0,
             queen: 0,
             unpromotion: 0,
+        }
+    }
+
+    pub fn decr(&mut self, role: Role) {
+        match role {
+            Role::Pawn => self.pawn -= 1,
+            Role::Knight => self.knight -= 1,
+            Role::Bishop => self.bishop -= 1,
+            Role::Rook => self.rook -= 1,
+            Role::Queen => self.queen -= 1,
+            _ => panic!("Cannot uncapture king"),
         }
     }
 }
