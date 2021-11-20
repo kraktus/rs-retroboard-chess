@@ -85,7 +85,7 @@ impl UnMove {
             },
             self.uncapture
                 .map(|role| role.upper_char().to_string())
-                .unwrap_or("".to_owned()),
+                .unwrap_or_else(|| "".to_owned()),
             self.from,
             self.to
         )
