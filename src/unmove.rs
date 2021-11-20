@@ -52,27 +52,30 @@ impl UnMove {
     /// regex: r"[UE]?[NBRQ]?([abcdefgh][1-8]){2}"
     ///
     /// Note: A unmove being accepted does not means it is for sure legal, just syntaxically correct
-    pub fn from_retro_uci(retro_uci: &str) -> Option<UnMove> {
+    pub fn from_retro_uci(retro_uci: &str) -> Result<UnMove, ParseRetroUciError> {
         lazy_static! {
         static ref UNMOVE_REGEX: Regex = Regex::new(r"^(?P<special_move>[UE]?)(?P<uncapture>[PNBRQ]?)(?P<from>([abcdefgh][1-8]))(?P<to>([abcdefgh][1-8]))$").unwrap();
         }
-        UNMOVE_REGEX.captures(retro_uci).and_then(|cap| {
-            Some(UnMove {
-                from: cap
-                    .name("from")
-                    .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
-                to: cap
-                    .name("to")
-                    .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
-                uncapture: cap
-                    .name("uncapture")
-                    .and_then(|x| x.as_str().chars().next())
-                    .and_then(Role::from_char),
-                special_move: cap
-                    .name("special_move")
-                    .and_then(|x| SpecialMove::from_str(x.as_str()).ok()),
+        UNMOVE_REGEX
+            .captures(retro_uci)
+            .and_then(|cap| {
+                Some(UnMove {
+                    from: cap
+                        .name("from")
+                        .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
+                    to: cap
+                        .name("to")
+                        .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
+                    uncapture: cap
+                        .name("uncapture")
+                        .and_then(|x| x.as_str().chars().next())
+                        .and_then(Role::from_char),
+                    special_move: cap
+                        .name("special_move")
+                        .and_then(|x| SpecialMove::from_str(x.as_str()).ok()),
+                })
             })
-        })
+            .ok_or(ParseRetroUciError)
     }
 
     pub fn to_retro_uci(&self) -> String {
