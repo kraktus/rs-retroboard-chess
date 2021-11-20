@@ -44,7 +44,7 @@ impl RetroBoard {
             .remove_piece_at(m.from)
             .expect("Unmove: from square should contain a piece");
         self.halfmoves += 1;
-        self.board.set_piece_at(m.to, moved_piece);
+
         if let Some(role) = m.uncapture {
             self.halfmoves = 0;
             self.board.set_piece_at(
@@ -59,13 +59,16 @@ impl RetroBoard {
         if m.is_unpromotion() {
             self.halfmoves = 0;
             self.board.set_piece_at(
-                m.from,
+                m.to,
                 Piece {
                     role: Role::Pawn,
                     color: self.retro_turn,
                 },
-            )
-        }
+            );
+            self.pockets.turn(self.retro_turn).unpromotion -= 1;
+        } else {
+            self.board.set_piece_at(m.to, moved_piece);
+        };
         self.retro_turn = !self.retro_turn;
     }
 }
@@ -168,6 +171,20 @@ mod tests {
             assert_eq!(
                 r,
                 RetroBoard::new_no_pockets(&format!("4k3/{}7/8/8/8/8/r7/4K3 b - - 0 1", piece))
+                    .unwrap()
+            )
+        }
+    }
+
+    #[test]
+    fn test_push_unpromote() {
+        for i in 1..9 {
+            let mut r =
+                RetroBoard::new("1R6/7k/8/8/8/8/8/1K6 b - - 0 1", &i.to_string(), "").unwrap();
+            r.push(u("Ub8b7"));
+            assert_eq!(
+                r,
+                RetroBoard::new("8/1P5k/8/8/8/8/8/1K6 w - - 0 1", &(i - 1).to_string(), "")
                     .unwrap()
             )
         }
