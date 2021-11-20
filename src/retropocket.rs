@@ -1,4 +1,6 @@
 use shakmaty::{Color, Color::Black, Color::White};
+use std::fmt;
+use std::fmt::Write;
 use std::str::FromStr;
 /// Error when parsing an invalid retro UCI.
 #[derive(Clone, Debug)]
@@ -8,7 +10,7 @@ pub struct ParseRetroPocketError;
 /// It stores the pieces than can be uncaptured by each color.    
 /// `self.unpromotion` is the number of pieces than can unpromote into a pawn.
 /// By default it is set to 0
-#[derive(Eq, PartialEq, Clone, Debug, Hash)]
+#[derive(Eq, PartialEq, Clone, Hash)]
 pub struct RetroPocket {
     pub pawn: u8,
     pub knight: u8,
@@ -28,6 +30,21 @@ impl RetroPocket {
             queen: 0,
             unpromotion: 0,
         }
+    }
+}
+
+impl fmt::Debug for RetroPocket {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_char('"')?;
+        f.write_str(&"P".repeat(self.pawn as usize))?;
+        f.write_str(&"N".repeat(self.knight as usize))?;
+        f.write_str(&"B".repeat(self.bishop as usize))?;
+        f.write_str(&"R".repeat(self.rook as usize))?;
+        f.write_str(&"Q".repeat(self.queen as usize))?;
+        if self.unpromotion > 0 {
+            f.write_str(&self.unpromotion.to_string())?
+        }
+        f.write_char('"')
     }
 }
 
