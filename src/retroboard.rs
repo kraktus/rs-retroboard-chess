@@ -22,8 +22,9 @@ impl RetroBoard {
     pub fn new(fen: &str, pocket_white: &str, pocket_black: &str) -> Option<Self> {
         let fen_vec: Vec<&str> = fen.split(' ').collect();
         let retro_turn = match *fen_vec.get(1).unwrap_or(&"w") {
-            "b" => Some(Black),
-            "w" => Some(White),
+            // opposite of side to move
+            "b" => Some(White),
+            "w" => Some(Black),
             _ => None,
         }?;
         let board = Board::from_board_fen(fen_vec.get(0)?.as_bytes()).ok()?;
@@ -60,7 +61,7 @@ impl RetroBoard {
                 m.from,
                 Piece {
                     role: Role::Pawn,
-                    color: !self.retro_turn,
+                    color: self.retro_turn,
                 },
             )
         }
@@ -149,4 +150,27 @@ mod tests {
             RetroBoard::new_no_pockets("k7/6P1/8/8/8/8/4K3/8 w - - 0 1").unwrap()
         )
     }
+
+    #[test]
+    fn test_push_uncapture() {
+        for piece in "PNBRQ".chars() {
+            let mut r = RetroBoard::new_no_pockets("4k3/r7/8/8/8/8/8/4K3 w - - 0 1").unwrap();
+            r.push(u(&format!("{}a7a2", piece)));
+            assert_eq!(
+                r,
+                RetroBoard::new_no_pockets(&format!("4k3/{}7/8/8/8/8/r7/4K3 b - - 0 1", piece))
+                    .unwrap()
+            )
+        }
+    }
+
+    // def test_uncapture_retropush_unmove(self):
+    // for piece in "NBRQ":
+    //     with self.subTest(piece=piece):
+    //         retrogradeboard = RetrogradeBoard(fen="r3k3/8/8/8/8/8/8/4K3 w - - 0 1", pocket_w=piece)
+    //         unmove = UnMove.from_retro_uci(f"{piece}a8a2")
+    //         retrogradeboard.retropush(unmove)
+    //         retrogradeboard_2 = RetrogradeBoard(fen=f"{piece}3k3/8/8/8/8/8/r7/4K3 b - - 0 2")
+    //         self.assertTrue(retrogradeboard.is_valid())
+    //         self.assertEqual(retrogradeboard, retrogradeboard_2)
 }
