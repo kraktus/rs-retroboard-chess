@@ -153,7 +153,11 @@ impl RetroBoard {
                 },
             })
         {
-            moves.push(unmove)
+            if !(Bitboard::BACKRANKS.contains(unmove.from) && unmove.uncapture == Some(Role::Pawn))
+            {
+                // pawns cannot be uncaptured on backrank
+                moves.push(unmove)
+            }
         }
     }
 }
@@ -219,6 +223,7 @@ fn show_board(board: &Board) -> String {
 mod tests {
     use super::*;
     use indoc::indoc;
+    use std::collections::HashSet;
 
     fn u(s: &str) -> UnMove {
         UnMove::from_retro_uci(s).unwrap()
@@ -319,34 +324,55 @@ mod tests {
         }
     }
 
-    fn check_moves(fen: &str, gen_type: &str, moves: &str) {
-        let r = RetroBoard::new_no_pockets(fen).unwrap();
-        let mut m1 = UnMoveList::new();
+    fn check_moves(fen: &str, white_p: &str, black_p: &str, gen_type: &str, moves: &str) {
+        let r = RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard");
+        let mut m1_hashset: HashSet<UnMove> = HashSet::new();
+        let mut m2_hashset: HashSet<UnMove> = HashSet::new();
         let mut m2 = UnMoveList::new();
         for x in moves.split(' ') {
-            m1.push(u(x))
+            println!("{:?}", x);
+            if !x.is_empty() {
+                m1_hashset.insert(u(x));
+            }
         }
         match gen_type {
             "pawns" => r.gen_pawns(Bitboard::FULL, &mut m2),
             _ => r.gen_pawns(Bitboard::FULL, &mut m2),
         };
-        assert_eq!(m1, m2)
+        for x in m2 {
+            m2_hashset.insert(x);
+        }
+        assert_eq!(m1_hashset, m2_hashset)
     }
 
     // macro for generating tests
     macro_rules! gen_tests_unmoves {
-    ($($fn_name:ident, $fen:tt, $gen_type:tt, $moves:tt,)+) => {
+    ($($fn_name:ident, $fen:tt, $white_p:tt, $black_p:tt, $gen_type:tt, $moves:tt,)+) => {
         $(
             #[test]
             fn $fn_name() {
-                check_moves($fen, $gen_type, $moves);
+                check_moves($fen, $white_p, $black_p, $gen_type, $moves);
             }
         )+
     }
 }
 
-    gen_tests_unmoves! {
+    // macro for generating tests
+    macro_rules! gen_tests_unmoves_no_pockets {
+    ($($fn_name:ident, $fen:tt, $gen_type:tt, $moves:tt,)+) => {
+        $(
+            gen_tests_unmoves! {$fn_name, $fen, "", "", $gen_type, $moves,}
+        )+
+    }
+}
+
+    gen_tests_unmoves_no_pockets! {
         test_simple_pawn, "2k5/8/8/5P2/8/8/8/K7 b - - 0 1", "pawn", "f5f4",
         test_double_pawn, "2k5/8/8/8/5P2/8/nn6/Kn6 b - - 0 1", "pawn", "f4f3 f4f2",
+        test_no_pawn, "1k6/8/8/8/8/8/3P2nn/6nK b - - 0 1", "pawn", "",
+    }
+
+    gen_tests_unmoves! {
+        test_pawn_uncapture, "3k4/8/8/8/4K3/7P/8/8 b - - 0 1", "", "PNBRQ", "pawn", "h3h2 Ph3g2 Nh3g2 Bh3g2 Rh3g2 Qh3g2",
     }
 }
