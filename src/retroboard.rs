@@ -99,69 +99,47 @@ impl RetroBoard {
     fn gen_pawn_moves(&self, target: Bitboard, moves: &mut UnMoveList) {
         let second = self.our(Role::Pawn) & Bitboard::relative_rank(self.retro_turn, Rank::Second);
 
+        // generate pawn uncaptures
         for from in self.our(Role::Pawn) & !second {
-            for to in attacks::pawn_attacks(self.retro_turn, from) & !self.board.occupied() & target
+            for to in
+                attacks::pawn_attacks(!self.retro_turn, from) & !self.board.occupied() & target
             {
+                self.gen_uncaptures(from, to, false, moves)
+            }
+        }
+
+        let single_moves =
+            self.our(Role::Pawn).relative_shift(!self.retro_turn, 8) & !self.board.occupied();
+
+        let double_moves = single_moves.relative_shift(!self.retro_turn, 8)
+            & Bitboard::relative_rank(self.retro_turn, Rank::Second)
+                .with(Bitboard::relative_rank(self.retro_turn, Rank::Third))
+            & !self.board.occupied();
+
+        for to in single_moves & target & !Bitboard::BACKRANKS {
+            if let Some(from) = to.offset(self.retro_turn.fold(8, -8)) {
                 moves.push(UnMove {
                     from,
-                    // uncapture: self.board.role_at(to),
                     to,
+                    uncapture: None,
                     special_move: None,
-                    uncapture: None, // DEBUG, just to compile
                 });
             }
         }
-        // for from in seventh {
-        //     for to in attacks::pawn_attacks(self.retro_turn, from) & self.them() & target {
-        //         push_promotions(moves, from, to, self.board.role_at(to));
-        //     }
-        // }
 
-        // let single_moves = self.our(Role::Pawn).relative_shift(self.retro_turn, 8) & !self.board.occupied();
-
-        // let double_moves = single_moves.relative_shift(self.retro_turn, 8)
-        //     & Bitboard::relative_rank(self.retro_turn, Rank::Fourth)
-        //         .with(Bitboard::relative_rank(self.retro_turn, Rank::Third))
-        //     & !self.board.occupied();
-
-        // for to in single_moves & target & !Bitboard::BACKRANKS {
-        //     if let Some(from) = to.offset(self.retro_turn.fold(-8, 8)) {
-        //         moves.push(Move::Normal {
-        //             role: Role::Pawn,
-        //             from,
-        //             capture: None,
-        //             to,
-        //             promotion: None,
-        //         });
-        //     }
-        // }
-
-        // for to in single_moves & target & Bitboard::BACKRANKS {
-        //     if let Some(from) = to.offset(self.retro_turn.fold(-8, 8)) {
-        //         push_promotions(moves, from, to, None);
-        //     }
-        // }
-
-        // for to in double_moves & target {
-        //     if let Some(from) = to.offset(self.retro_turn.fold(-16, 16)) {
-        //         moves.push(Move::Normal {
-        //             role: Role::Pawn,
-        //             from,
-        //             capture: None,
-        //             to,
-        //             promotion: None,
-        //         });
-        //     }
-        // }
+        for to in double_moves & target {
+            if let Some(from) = to.offset(self.retro_turn.fold(16, -16)) {
+                moves.push(UnMove {
+                    from,
+                    to,
+                    uncapture: None,
+                    special_move: None,
+                });
+            }
+        }
     }
 
-    fn gen_uncapture(
-        &self,
-        from: Square,
-        to: Square,
-        unpromotion: bool,
-        unmove_list: &mut UnMoveList,
-    ) {
+    fn gen_uncaptures(&self, from: Square, to: Square, unpromotion: bool, moves: &mut UnMoveList) {
         for unmove in self
             .pockets
             .color(!self.retro_turn)
@@ -178,7 +156,7 @@ impl RetroBoard {
                 },
             })
         {
-            unmove_list.push(unmove)
+            moves.push(unmove)
         }
     }
 }
