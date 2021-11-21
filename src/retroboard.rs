@@ -349,30 +349,4 @@ mod tests {
         test_simple_pawn, "2k5/8/8/5P2/8/8/8/K7 b - - 0 1", "pawn", "f5f4",
         test_double_pawn, "2k5/8/8/8/5P2/8/nn6/Kn6 b - - 0 1", "pawn", "f4f3 f4f2",
     }
-
-    #[test]
-    fn test_generate_simple_pawn_unmoves() {
-        let r = RetroBoard::new_no_pockets("2k5/8/8/5P2/8/8/8/K7 b - - 0 1").unwrap();
-        let mut m1 = UnMoveList::new();
-        let mut m2 = UnMoveList::new();
-        let expected_unmoves = ["f5f4"];
-        for x in expected_unmoves {
-            m1.push(u(x))
-        }
-        r.gen_pawns(Bitboard::FULL, &mut m2);
-        assert_eq!(m1, m2)
-    }
-
-    #[test]
-    fn test_generate_simple_and_double_pawn_unmoves() {
-        let r = RetroBoard::new_no_pockets("2k5/8/8/8/5P2/8/nn6/Kn6 b - - 0 1").unwrap();
-        let mut m1 = UnMoveList::new();
-        let mut m2 = UnMoveList::new();
-        let expected_unmoves = ["f4f3", "f4f2"];
-        for x in expected_unmoves {
-            m1.push(u(x))
-        }
-        r.gen_pawns(Bitboard::FULL, &mut m2);
-        assert_eq!(m1, m2)
-    }
 }
