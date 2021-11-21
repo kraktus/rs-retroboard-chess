@@ -189,4 +189,18 @@ mod tests {
             )
         }
     }
+
+    #[test]
+    fn test_push_unpromote_and_uncapture() {
+        for piece in "NBRQ".chars() {
+            let mut r =
+                RetroBoard::new("r3k3/8/8/8/8/8/8/4K3 w - - 0 1", &piece.to_string(), "1").unwrap();
+            r.push(u(&format!("U{}a8b7", piece)));
+            assert_eq!(
+                r,
+                RetroBoard::new_no_pockets(&format!("{}3k3/1p6/8/8/8/8/8/4K3 b - - 0 2", piece))
+                    .unwrap()
+            )
+        }
+    }
 }
