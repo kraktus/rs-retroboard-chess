@@ -96,11 +96,9 @@ impl RetroBoard {
         self.them() & self.board.by_role(role)
     }
 
-    fn gen_pawn_moves(&self, target: Bitboard, moves: &mut UnMoveList) {
-        let second = self.our(Role::Pawn) & Bitboard::relative_rank(self.retro_turn, Rank::Second);
-
+    fn gen_pawns(&self, target: Bitboard, moves: &mut UnMoveList) {
         // generate pawn uncaptures
-        for from in self.our(Role::Pawn) & !second {
+        for from in self.our(Role::Pawn) & !Bitboard::relative_rank(self.retro_turn, Rank::Second) {
             for to in
                 attacks::pawn_attacks(!self.retro_turn, from) & !self.board.occupied() & target
             {
@@ -113,7 +111,6 @@ impl RetroBoard {
 
         let double_moves = single_moves.relative_shift(!self.retro_turn, 8)
             & Bitboard::relative_rank(self.retro_turn, Rank::Second)
-                .with(Bitboard::relative_rank(self.retro_turn, Rank::Third))
             & !self.board.occupied();
 
         for to in single_moves & target & !Bitboard::BACKRANKS {
@@ -320,5 +317,62 @@ mod tests {
                     .unwrap()
             )
         }
+    }
+
+    fn check_moves(fen: &str, gen_type: &str, moves: &str) {
+        let r = RetroBoard::new_no_pockets(fen).unwrap();
+        let mut m1 = UnMoveList::new();
+        let mut m2 = UnMoveList::new();
+        for x in moves.split(' ') {
+            m1.push(u(x))
+        }
+        match gen_type {
+            "pawns" => r.gen_pawns(Bitboard::FULL, &mut m2),
+            _ => r.gen_pawns(Bitboard::FULL, &mut m2),
+        };
+        assert_eq!(m1, m2)
+    }
+
+    // macro for generating tests
+    macro_rules! gen_tests_unmoves {
+    ($($fn_name:ident, $fen:tt, $gen_type:tt, $moves:tt,)+) => {
+        $(
+            #[test]
+            fn $fn_name() {
+                check_moves($fen, $gen_type, $moves);
+            }
+        )+
+    }
+}
+
+    gen_tests_unmoves! {
+        test_simple_pawn, "2k5/8/8/5P2/8/8/8/K7 b - - 0 1", "pawn", "f5f4",
+        test_double_pawn, "2k5/8/8/8/5P2/8/nn6/Kn6 b - - 0 1", "pawn", "f4f3 f4f2",
+    }
+
+    #[test]
+    fn test_generate_simple_pawn_unmoves() {
+        let r = RetroBoard::new_no_pockets("2k5/8/8/5P2/8/8/8/K7 b - - 0 1").unwrap();
+        let mut m1 = UnMoveList::new();
+        let mut m2 = UnMoveList::new();
+        let expected_unmoves = ["f5f4"];
+        for x in expected_unmoves {
+            m1.push(u(x))
+        }
+        r.gen_pawns(Bitboard::FULL, &mut m2);
+        assert_eq!(m1, m2)
+    }
+
+    #[test]
+    fn test_generate_simple_and_double_pawn_unmoves() {
+        let r = RetroBoard::new_no_pockets("2k5/8/8/8/5P2/8/nn6/Kn6 b - - 0 1").unwrap();
+        let mut m1 = UnMoveList::new();
+        let mut m2 = UnMoveList::new();
+        let expected_unmoves = ["f4f3", "f4f2"];
+        for x in expected_unmoves {
+            m1.push(u(x))
+        }
+        r.gen_pawns(Bitboard::FULL, &mut m2);
+        assert_eq!(m1, m2)
     }
 }
