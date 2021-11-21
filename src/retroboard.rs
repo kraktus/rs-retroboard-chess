@@ -77,6 +77,9 @@ impl RetroBoard {
 
     pub fn generate_pseudo_legal_unmoves(&self) -> UnMoveList {
         let mut moves = UnMoveList::new(); // TODO
+        self.gen_pieces(&mut moves);
+        self.gen_unpromotion(&mut moves);
+        self.gen_pawns(&mut moves);
         moves
     }
 
@@ -101,19 +104,21 @@ impl RetroBoard {
     }
 
     fn gen_unpromotion(&self, moves: &mut UnMoveList) {
-        for from in self.us() & Bitboard::relative_rank(self.retro_turn, Rank::Eighth) {
-            let to = from
-                .offset(self.retro_turn.fold(8, -8))
-                .expect("We're in the eighth rank and going back so square exists");
-            if !self.board.piece_at(to).is_some() {
-                moves.push(UnMove {
-                    from,
-                    to,
-                    uncapture: None,
-                    special_move: Some(SpecialMove::UnPromotion),
-                });
-            };
-            self.gen_pawn_uncaptures(from, true, moves);
+        if self.pockets.color(self.retro_turn).unpromotion > 0 {
+            for from in self.us() & Bitboard::relative_rank(self.retro_turn, Rank::Eighth) {
+                let to = from
+                    .offset(self.retro_turn.fold(-8, 8))
+                    .expect("We're in the eighth rank and going back so square exists");
+                if !self.board.piece_at(to).is_some() {
+                    moves.push(UnMove {
+                        from,
+                        to,
+                        uncapture: None,
+                        special_move: Some(SpecialMove::UnPromotion),
+                    });
+                };
+                self.gen_pawn_uncaptures(from, true, moves);
+            }
         }
     }
 
@@ -136,7 +141,7 @@ impl RetroBoard {
         }
     }
 
-    fn gen_pawns(&self, target: Bitboard, moves: &mut UnMoveList) {
+    fn gen_pawns(&self, moves: &mut UnMoveList) {
         // generate pawn uncaptures
         for from in self.our(Role::Pawn) & !Bitboard::relative_rank(self.retro_turn, Rank::Second) {
             self.gen_pawn_uncaptures(from, false, moves)
@@ -266,6 +271,7 @@ mod tests {
     use super::*;
     use indoc::indoc;
     use paste::paste;
+    use pretty_assertions::{assert_eq, assert_ne};
     use std::collections::HashSet;
 
     fn u(s: &str) -> UnMove {
@@ -379,8 +385,10 @@ mod tests {
             }
         }
         match gen_type {
-            "pawns" => r.gen_pawns(Bitboard::FULL, &mut m2),
-            _ => r.gen_pawns(Bitboard::FULL, &mut m2),
+            "pawn" => r.gen_pawns(&mut m2),
+            "piece" => r.gen_pieces(&mut m2),
+            "unpromotion" => r.gen_unpromotion(&mut m2),
+            "all" | _ => m2 = r.generate_pseudo_legal_unmoves(),
         };
         for x in m2 {
             m2_hashset.insert(x);
@@ -415,9 +423,22 @@ mod tests {
         simple_pawn, "2k5/8/8/5P2/8/8/8/K7 b - - 0 1", "pawn", "f5f4",
         double_pawn, "2k5/8/8/8/5P2/8/nn6/Kn6 b - - 0 1", "pawn", "f4f3 f4f2",
         no_pawn, "1k6/8/8/8/8/8/3P2nn/6nK b - - 0 1", "pawn", "",
+        king, "1k6/8/8/8/8/8/nn6/Kn6 b - - 0 1", "piece", "",
+        knight, "1k6/8/8/8/8/5N2/nn6/Kn6 b - - 0 1", "piece", "f3e1 f3g1 f3h2 f3h4 f3g5 f3e5 f3d4 f3d2",
+        bishop, "1k6/8/8/8/3r4/8/nn3B2/Kn6 b - - 0 1", "piece", "f2e1 f2g1 f2g3 f2h4 f2e3",
+        rook, "1k6/8/8/8/8/5nnn/nn3n2/Kn3n1R b - - 0 1", "piece", "h1h2 h1g1",
+        queen, "1k6/8/8/8/8/5nnn/nn3n2/Kn3n1Q b - - 0 1", "piece", "h1h2 h1g1 h1g2",
     }
 
     gen_tests_unmoves! {
         pawn_uncapture, "3k4/8/8/8/4K3/7P/8/8 b - - 0 1", "", "PNBRQ", "pawn", "h3h2 Ph3g2 Nh3g2 Bh3g2 Rh3g2 Qh3g2",
+        rook_uncapture, "1k6/8/8/8/8/5nnn/nn3n2/Kn3n1R b - - 0 1", "", "PBNRQ", "piece", "h1h2 h1g1 Bh1h2 Bh1g1 Nh1h2 Nh1g1 Rh1h2 Rh1g1 Qh1h2 Qh1g1",
+        queen_uncapture, "1k6/8/8/8/8/5nnn/nn3n2/Kn3n1Q b - - 0 1", "", "PN", "piece", "h1h2 h1g1 h1g2 Nh1h2 Nh1g1 Nh1g2",
+        bishop_uncapture, "1k6/8/8/8/8/5nnn/nn3n2/Kn3n1B b - - 0 1", "", "PN", "piece", "h1g2 Nh1g2",
+        knight_uncapture, "1k6/8/8/8/8/8/nn6/Kn5N b - - 0 1", "", "PQ", "piece", "h1g3 h1f2 Qh1g3 Qh1f2",
+        knight_uncapture_with_pawns, "k7/8/8/8/8/8/nn5N/Kn6 b - - 0 1", "", "PQ", "piece", "h2g4 h2f3 h2f1 Qh2g4 Qh2f3 Qh2f1 Ph2g4 Ph2f3 Ph2f1",
+        unpromotion_and_unpromotion_uncapture, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "1", "PR", "unpromotion", "Ug8g7 URg8f7 URg8h7",
+        unpromotion_but_uncapture_not_possible, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "1", "", "unpromotion", "Ug8g7",
+        no_unpromotion, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "", "PQ", "unpromotion", "",
     }
 }
