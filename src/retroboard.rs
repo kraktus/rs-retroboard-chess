@@ -9,7 +9,8 @@ pub struct RetroBoard {
     board: Board,
     retro_turn: Color,
     pockets: RetroPockets,
-    halfmoves: u8, // TODO en-passant
+    halfmoves: u8, // Number of plies since a breaking unmove has been done.
+                   // TODO en-passant
 }
 
 /// A `Board` where `Unmove` are played and all legal `Unmove` can be generated, on top of every thing a `Board` can do.
@@ -86,7 +87,7 @@ impl Eq for RetroBoard {}
 impl fmt::Debug for RetroBoard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&format!(
-            "{}\nretro_turn = {:?}\n{:?}\n{:?}",
+            "{}\nretro_turn = {:?}\n{:?}\nhalfmoves: {:?}",
             show_board(&self.board),
             self.retro_turn,
             self.pockets,
@@ -114,6 +115,7 @@ fn unicode(c: char) -> char {
 }
 
 fn show_board(board: &Board) -> String {
+    // TODO map over `Board` Debug, or implement in shakmaty
     let mut board_unicode = String::from("\n"); // start with a newline otherwise there's an off-set on the top line if writing something, eg. println!(yeah {:?}, game)
     for rank in (0..8).map(Rank::new).rev() {
         for file in (0..8).map(File::new) {
@@ -132,9 +134,38 @@ fn show_board(board: &Board) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use indoc::indoc;
 
     fn u(s: &str) -> UnMove {
         UnMove::from_retro_uci(s).unwrap()
+    }
+
+    #[test]
+    fn test_debug() {
+        let r = RetroBoard::new(
+            "kqrbn2k/5p2/8/8/8/8/5P2/KQRBN3 w - - 0 1",
+            "2PPPNBR",
+            "4PPNBBRQ",
+        )
+        .unwrap();
+        println!("{:?}", r);
+        assert_eq!(
+            format!("{:?}", r),
+            indoc! {"
+
+                ♚ ♛ ♜ ♝ ♞ . . ♚
+                . . . . . ♟ . .
+                . . . . . . . .
+                . . . . . . . .
+                . . . . . . . .
+                . . . . . . . .
+                . . . . . ♙ . .
+                ♔ ♕ ♖ ♗ ♘ . . .
+
+                retro_turn = Black
+                RetroPockets { black: \"PPNBBRQ4\", white: \"PPPNBR2\" }
+                halfmoves: 0"}
+        )
     }
 
     #[test]

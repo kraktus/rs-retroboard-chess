@@ -9,3 +9,6 @@ edition = "2021"
 shakmaty = "0.20.2"
 regex = "1.5"
 lazy_static = "1.4"
+
+[dev-dependencies]
+indoc = "1.0.2"
