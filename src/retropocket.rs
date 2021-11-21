@@ -106,6 +106,7 @@ impl FromStr for RetroPocket {
 
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
 pub struct RetroPockets {
+    // TODO check if worth switching to `ByColor`
     black: RetroPocket,
     white: RetroPocket,
 }

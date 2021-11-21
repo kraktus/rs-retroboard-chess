@@ -1,8 +1,11 @@
+use arrayvec::ArrayVec;
 use lazy_static::lazy_static;
 use regex::Regex;
 use shakmaty::{Role, Square};
 use std::fmt;
 use std::str::FromStr;
+
+pub type UnMoveList = ArrayVec<UnMove, 512>; // TODO check if reducing that number is possible (256 used for std in shakmaty)
 
 /// Error when parsing an invalid retro UCI.
 #[derive(Clone, Debug)]

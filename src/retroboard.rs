@@ -1,8 +1,8 @@
 use shakmaty::Piece;
-use shakmaty::{Board, Color, Color::Black, Color::White, File, Rank, Role, Square};
+use shakmaty::{Bitboard, Board, Color, Color::Black, Color::White, File, Rank, Role, Square};
 use std::fmt;
 
-use crate::{RetroPockets, UnMove};
+use crate::{RetroPockets, UnMove, UnMoveList};
 
 #[derive(Hash, Clone)] // Copy?
 pub struct RetroBoard {
@@ -72,7 +72,87 @@ impl RetroBoard {
         };
         self.retro_turn = !self.retro_turn;
     }
+
+    pub fn generate_pseudo_legal_unmoves(&self) -> UnMoveList {
+        let mut moves = UnMoveList::new(); // TODO
+        moves
+    }
+
+    fn us(&self) -> Bitboard {
+        self.board.by_color(self.retro_turn)
+    }
+
+    fn our(&self, role: Role) -> Bitboard {
+        self.us() & self.board.by_role(role)
+    }
+
+    fn them(&self) -> Bitboard {
+        self.board.by_color(!self.retro_turn)
+    }
+
+    fn their(&self, role: Role) -> Bitboard {
+        self.them() & self.board.by_role(role)
+    }
 }
+
+// fn gen_pawn_moves(&self, target: Bitboard, moves: &mut UnMoveList) {
+//     let seventh = pos.our(Role::Pawn) & Bitboard::relative_rank(pos.turn(), Rank::Seventh);
+
+//     for from in pos.our(Role::Pawn) & !seventh {
+//         for to in attacks::pawn_attacks(pos.turn(), from) & pos.them() & target {
+//             moves.push(Move::Normal {
+//                 role: Role::Pawn,
+//                 from,
+//                 capture: pos.board().role_at(to),
+//                 to,
+//                 promotion: None,
+//             });
+//         }
+//     }
+
+//     for from in seventh {
+//         for to in attacks::pawn_attacks(pos.turn(), from) & pos.them() & target {
+//             push_promotions(moves, from, to, pos.board().role_at(to));
+//         }
+//     }
+
+//     let single_moves = pos.our(Role::Pawn).relative_shift(pos.turn(), 8) & !pos.board().occupied();
+
+//     let double_moves = single_moves.relative_shift(pos.turn(), 8)
+//         & Bitboard::relative_rank(pos.turn(), Rank::Fourth)
+//             .with(Bitboard::relative_rank(pos.turn(), Rank::Third))
+//         & !pos.board().occupied();
+
+//     for to in single_moves & target & !Bitboard::BACKRANKS {
+//         if let Some(from) = to.offset(pos.turn().fold(-8, 8)) {
+//             moves.push(Move::Normal {
+//                 role: Role::Pawn,
+//                 from,
+//                 capture: None,
+//                 to,
+//                 promotion: None,
+//             });
+//         }
+//     }
+
+//     for to in single_moves & target & Bitboard::BACKRANKS {
+//         if let Some(from) = to.offset(pos.turn().fold(-8, 8)) {
+//             push_promotions(moves, from, to, None);
+//         }
+//     }
+
+//     for to in double_moves & target {
+//         if let Some(from) = to.offset(pos.turn().fold(-16, 16)) {
+//             moves.push(Move::Normal {
+//                 role: Role::Pawn,
+//                 from,
+//                 capture: None,
+//                 to,
+//                 promotion: None,
+//             });
+//         }
+//     }
+// }
 
 impl PartialEq for RetroBoard {
     fn eq(&self, other: &Self) -> bool {
@@ -115,7 +195,7 @@ fn unicode(c: char) -> char {
 }
 
 fn show_board(board: &Board) -> String {
-    // TODO map over `Board` Debug, or implement in shakmaty
+    // TODO map over `Board` Debug, or implement it in shakmaty (pretty-print?)
     let mut board_unicode = String::from("\n"); // start with a newline otherwise there's an off-set on the top line if writing something, eg. println!(yeah {:?}, game)
     for rank in (0..8).map(Rank::new).rev() {
         for file in (0..8).map(File::new) {
