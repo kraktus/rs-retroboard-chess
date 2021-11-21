@@ -80,30 +80,66 @@ impl RetroBoard {
         moves
     }
 
+    #[inline]
     fn us(&self) -> Bitboard {
         self.board.by_color(self.retro_turn)
     }
 
+    #[inline]
     fn our(&self, role: Role) -> Bitboard {
         self.us() & self.board.by_role(role)
     }
 
+    #[inline]
     fn them(&self) -> Bitboard {
         self.board.by_color(!self.retro_turn)
     }
 
+    #[inline]
     fn their(&self, role: Role) -> Bitboard {
         self.them() & self.board.by_role(role)
+    }
+
+    fn gen_unpromotion(&self, moves: &mut UnMoveList) {
+        for from in self.us() & Bitboard::relative_rank(self.retro_turn, Rank::Eighth) {
+            let to = from
+                .offset(self.retro_turn.fold(8, -8))
+                .expect("We're in the eighth rank and going back so square exists");
+            if !self.board.piece_at(to).is_some() {
+                moves.push(UnMove {
+                    from,
+                    to,
+                    uncapture: None,
+                    special_move: Some(SpecialMove::UnPromotion),
+                });
+            };
+            self.gen_pawn_uncaptures(from, true, moves);
+        }
+    }
+
+    fn gen_pieces(&self, moves: &mut UnMoveList) {
+        for from in self.us() & !self.our(Role::Pawn) {
+            for to in attacks::attacks(
+                from,
+                self.board.piece_at(from).unwrap(),
+                self.board.occupied(),
+            ) & !self.board.occupied()
+            {
+                moves.push(UnMove {
+                    from,
+                    to,
+                    uncapture: None,
+                    special_move: None,
+                });
+                self.gen_uncaptures(from, to, false, moves)
+            }
+        }
     }
 
     fn gen_pawns(&self, target: Bitboard, moves: &mut UnMoveList) {
         // generate pawn uncaptures
         for from in self.our(Role::Pawn) & !Bitboard::relative_rank(self.retro_turn, Rank::Second) {
-            for to in
-                attacks::pawn_attacks(!self.retro_turn, from) & !self.board.occupied() & target
-            {
-                self.gen_uncaptures(from, to, false, moves)
-            }
+            self.gen_pawn_uncaptures(from, false, moves)
         }
 
         let single_moves =
@@ -113,7 +149,7 @@ impl RetroBoard {
             & Bitboard::relative_rank(self.retro_turn, Rank::Second)
             & !self.board.occupied();
 
-        for to in single_moves & target & !Bitboard::BACKRANKS {
+        for to in single_moves & !Bitboard::BACKRANKS {
             if let Some(from) = to.offset(self.retro_turn.fold(8, -8)) {
                 moves.push(UnMove {
                     from,
@@ -124,7 +160,7 @@ impl RetroBoard {
             }
         }
 
-        for to in double_moves & target {
+        for to in double_moves {
             if let Some(from) = to.offset(self.retro_turn.fold(16, -16)) {
                 moves.push(UnMove {
                     from,
@@ -133,6 +169,12 @@ impl RetroBoard {
                     special_move: None,
                 });
             }
+        }
+    }
+
+    fn gen_pawn_uncaptures(&self, from: Square, unpromotion: bool, moves: &mut UnMoveList) {
+        for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.board.occupied() {
+            self.gen_uncaptures(from, to, unpromotion, moves)
         }
     }
 
