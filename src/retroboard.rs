@@ -76,11 +76,29 @@ impl RetroBoard {
     }
 
     pub fn generate_pseudo_legal_unmoves(&self) -> UnMoveList {
-        let mut moves = UnMoveList::new(); // TODO
+        let mut moves = UnMoveList::new();
         self.gen_pieces(&mut moves);
         self.gen_unpromotion(&mut moves);
         self.gen_pawns(&mut moves);
         moves
+    }
+
+    /// Generate legal unmoves, which are all the pseudo legal unmoves which do not put the opponent's king in check.
+    /// If the opponent's king is in check at the beginning of our turn, the only legal unmoves are those which stop it from being in check.
+    pub fn generate_legal_unmoves(&self) -> UnMoveList {
+        // supposing the opponent's king is not in check at the beginning of our retro_turn
+        let mut moves: UnMoveList = self.generate_pseudo_legal_unmoves();
+        moves.retain(|m| self.is_safe(m));
+        moves
+    }
+
+    fn is_safe(&self, unmove: &UnMove) -> bool {
+        (attacks::attacks(
+            unmove.to,
+            self.board.piece_at(unmove.from).unwrap(),
+            self.board.occupied() ^ unmove.from,
+        ) & self.board.king_of(!self.retro_turn).unwrap())
+        .is_empty()
     }
 
     #[inline]
@@ -445,7 +463,8 @@ mod tests {
                 "pawn" => r.gen_pawns(&mut m2),
                 "piece" => r.gen_pieces(&mut m2),
                 "unpromotion" => r.gen_unpromotion(&mut m2),
-                "all" | _ => m2 = r.generate_pseudo_legal_unmoves(),
+                "pseudo" => m2 = r.generate_pseudo_legal_unmoves(),
+                "legal" | _ => m2 = r.generate_legal_unmoves(),
             };
             for x in m2 {
                 m2_hashset.insert(x);
@@ -497,6 +516,7 @@ mod tests {
 
     gen_tests_unmoves! {
         pawn_uncapture, "3k4/8/8/8/4K3/7P/8/8 b - - 0 1", "", "PNBRQ", "pawn", "h3h2 Ph3g2 Nh3g2 Bh3g2 Rh3g2 Qh3g2",
+        no_pawn_uncapture, "2k5/8/8/8/5P2/4q1q1/nn6/Kn6 b - - 0 1", "", "PNBRQ", "pawn", "f4f3 f4f2",
         rook_uncapture, "1k6/8/8/8/8/5nnn/nn3n2/Kn3n1R b - - 0 1", "", "PBNRQ", "piece", "h1h2 h1g1 Bh1h2 Bh1g1 Nh1h2 Nh1g1 Rh1h2 Rh1g1 Qh1h2 Qh1g1",
         queen_uncapture, "1k6/8/8/8/8/5nnn/nn3n2/Kn3n1Q b - - 0 1", "", "PN", "piece", "h1h2 h1g1 h1g2 Nh1h2 Nh1g1 Nh1g2",
         bishop_uncapture, "1k6/8/8/8/8/5nnn/nn3n2/Kn3n1B b - - 0 1", "", "PN", "piece", "h1g2 Nh1g2",
@@ -505,6 +525,31 @@ mod tests {
         unpromotion_and_unpromotion_uncapture, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "1", "PR", "unpromotion", "Ug8g7 URg8f7 URg8h7",
         unpromotion_but_uncapture_not_possible, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "1", "", "unpromotion", "Ug8g7",
         no_unpromotion, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "", "PQ", "unpromotion", "",
-        pseudo_legal, "5BN1/k3n3/5n1n/8/5P2/8/nn6/K7 b - - 0 1", "1", "PQ", "all", "a1b1 Qa1b1 Ug8g7 UQg8f7 UQg8h7 Uf8f7 UQf8g7 Qf8g7 f8g7 f4f2 f4f3 Pf4g3 Pf4e3 Qf4g3 Qf4e3",
+        pseudo_legal, "5BN1/k3n3/5n1n/8/5P2/8/nn6/K7 b - - 0 1", "1", "PQ", "pseudo", "a1b1 Qa1b1 Ug8g7 UQg8f7 UQg8h7 Uf8f7 UQf8g7 Qf8g7 f8g7 f4f2 f4f3 Pf4g3 Pf4e3 Qf4g3 Qf4e3",
+    }
+
+    #[test]
+    fn test_final_pseudo_unmoves() {
+        for mirrored in [false, true] {
+            let fen = "1N6/1r5k/8/8/2P5/8/1Q2P3/n5Kb w - - 0 1";
+            let black_p = "3NBRQP";
+            let white_p = "2PNBRQ";
+            let mut counter: u32 = 0;
+            let r = if mirrored {
+                RetroBoard::new(&mirror_fen(fen), black_p, white_p)
+                    .expect("Valid mirrored retroboard")
+            } else {
+                RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard")
+            };
+            for m in r.generate_pseudo_legal_unmoves() {
+                counter += 1;
+                let mut r2 = r.clone();
+                r2.push(m);
+                for _ in r2.generate_pseudo_legal_unmoves() {
+                    counter += 1
+                }
+            }
+            assert_eq!(counter, 22952)
+        }
     }
 }
