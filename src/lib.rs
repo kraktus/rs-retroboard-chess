@@ -2,7 +2,7 @@
 #![warn(clippy::cargo)]
 
 mod unmove;
-pub use crate::unmove::{UnMove, UnMoveList};
+pub use crate::unmove::{SpecialMove, UnMove, UnMoveList};
 
 mod retroboard;
 pub use crate::retroboard::RetroBoard;

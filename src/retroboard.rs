@@ -1,8 +1,10 @@
 use shakmaty::Piece;
-use shakmaty::{Bitboard, Board, Color, Color::Black, Color::White, File, Rank, Role, Square};
+use shakmaty::{
+    attacks, Bitboard, Board, Color, Color::Black, Color::White, File, Rank, Role, Square,
+};
 use std::fmt;
 
-use crate::{RetroPockets, UnMove, UnMoveList};
+use crate::{RetroPockets, SpecialMove, UnMove, UnMoveList};
 
 #[derive(Hash, Clone)] // Copy?
 pub struct RetroBoard {
@@ -55,7 +57,7 @@ impl RetroBoard {
                     color: !self.retro_turn,
                 },
             );
-            self.pockets.turn(!self.retro_turn).decr(role);
+            self.pockets.color_mut(!self.retro_turn).decr(role);
         };
         if m.is_unpromotion() {
             self.halfmoves = 0;
@@ -66,7 +68,7 @@ impl RetroBoard {
                     color: self.retro_turn,
                 },
             );
-            self.pockets.turn(self.retro_turn).unpromotion -= 1;
+            self.pockets.color_mut(self.retro_turn).unpromotion -= 1;
         } else {
             self.board.set_piece_at(m.to, moved_piece);
         };
@@ -93,66 +95,93 @@ impl RetroBoard {
     fn their(&self, role: Role) -> Bitboard {
         self.them() & self.board.by_role(role)
     }
+
+    fn gen_pawn_moves(&self, target: Bitboard, moves: &mut UnMoveList) {
+        let second = self.our(Role::Pawn) & Bitboard::relative_rank(self.retro_turn, Rank::Second);
+
+        for from in self.our(Role::Pawn) & !second {
+            for to in attacks::pawn_attacks(self.retro_turn, from) & !self.board.occupied() & target
+            {
+                moves.push(UnMove {
+                    from,
+                    // uncapture: self.board.role_at(to),
+                    to,
+                    special_move: None,
+                    uncapture: None, // DEBUG, just to compile
+                });
+            }
+        }
+        // for from in seventh {
+        //     for to in attacks::pawn_attacks(self.retro_turn, from) & self.them() & target {
+        //         push_promotions(moves, from, to, self.board.role_at(to));
+        //     }
+        // }
+
+        // let single_moves = self.our(Role::Pawn).relative_shift(self.retro_turn, 8) & !self.board.occupied();
+
+        // let double_moves = single_moves.relative_shift(self.retro_turn, 8)
+        //     & Bitboard::relative_rank(self.retro_turn, Rank::Fourth)
+        //         .with(Bitboard::relative_rank(self.retro_turn, Rank::Third))
+        //     & !self.board.occupied();
+
+        // for to in single_moves & target & !Bitboard::BACKRANKS {
+        //     if let Some(from) = to.offset(self.retro_turn.fold(-8, 8)) {
+        //         moves.push(Move::Normal {
+        //             role: Role::Pawn,
+        //             from,
+        //             capture: None,
+        //             to,
+        //             promotion: None,
+        //         });
+        //     }
+        // }
+
+        // for to in single_moves & target & Bitboard::BACKRANKS {
+        //     if let Some(from) = to.offset(self.retro_turn.fold(-8, 8)) {
+        //         push_promotions(moves, from, to, None);
+        //     }
+        // }
+
+        // for to in double_moves & target {
+        //     if let Some(from) = to.offset(self.retro_turn.fold(-16, 16)) {
+        //         moves.push(Move::Normal {
+        //             role: Role::Pawn,
+        //             from,
+        //             capture: None,
+        //             to,
+        //             promotion: None,
+        //         });
+        //     }
+        // }
+    }
+
+    fn gen_uncapture(
+        &self,
+        from: Square,
+        to: Square,
+        unpromotion: bool,
+        unmove_list: &mut UnMoveList,
+    ) {
+        for unmove in self
+            .pockets
+            .color(!self.retro_turn)
+            .clone()
+            .into_iter()
+            .map(|r| UnMove {
+                from,
+                to,
+                uncapture: Some(r),
+                special_move: if unpromotion {
+                    Some(SpecialMove::UnPromotion)
+                } else {
+                    None
+                },
+            })
+        {
+            unmove_list.push(unmove)
+        }
+    }
 }
-
-// fn gen_pawn_moves(&self, target: Bitboard, moves: &mut UnMoveList) {
-//     let seventh = pos.our(Role::Pawn) & Bitboard::relative_rank(pos.turn(), Rank::Seventh);
-
-//     for from in pos.our(Role::Pawn) & !seventh {
-//         for to in attacks::pawn_attacks(pos.turn(), from) & pos.them() & target {
-//             moves.push(Move::Normal {
-//                 role: Role::Pawn,
-//                 from,
-//                 capture: pos.board().role_at(to),
-//                 to,
-//                 promotion: None,
-//             });
-//         }
-//     }
-
-//     for from in seventh {
-//         for to in attacks::pawn_attacks(pos.turn(), from) & pos.them() & target {
-//             push_promotions(moves, from, to, pos.board().role_at(to));
-//         }
-//     }
-
-//     let single_moves = pos.our(Role::Pawn).relative_shift(pos.turn(), 8) & !pos.board().occupied();
-
-//     let double_moves = single_moves.relative_shift(pos.turn(), 8)
-//         & Bitboard::relative_rank(pos.turn(), Rank::Fourth)
-//             .with(Bitboard::relative_rank(pos.turn(), Rank::Third))
-//         & !pos.board().occupied();
-
-//     for to in single_moves & target & !Bitboard::BACKRANKS {
-//         if let Some(from) = to.offset(pos.turn().fold(-8, 8)) {
-//             moves.push(Move::Normal {
-//                 role: Role::Pawn,
-//                 from,
-//                 capture: None,
-//                 to,
-//                 promotion: None,
-//             });
-//         }
-//     }
-
-//     for to in single_moves & target & Bitboard::BACKRANKS {
-//         if let Some(from) = to.offset(pos.turn().fold(-8, 8)) {
-//             push_promotions(moves, from, to, None);
-//         }
-//     }
-
-//     for to in double_moves & target {
-//         if let Some(from) = to.offset(pos.turn().fold(-16, 16)) {
-//             moves.push(Move::Normal {
-//                 role: Role::Pawn,
-//                 from,
-//                 capture: None,
-//                 to,
-//                 promotion: None,
-//             });
-//         }
-//     }
-// }
 
 impl PartialEq for RetroBoard {
     fn eq(&self, other: &Self) -> bool {

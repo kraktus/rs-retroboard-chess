@@ -2,6 +2,9 @@ use shakmaty::{Color, Color::Black, Color::White, Role};
 use std::fmt;
 use std::fmt::Write;
 use std::str::FromStr;
+
+// use arrayvec::ArrayVec;
+
 /// Error when parsing an invalid retro UCI.
 #[derive(Clone, Debug)]
 pub struct ParseRetroPocketError;
@@ -104,6 +107,31 @@ impl FromStr for RetroPocket {
     }
 }
 
+impl IntoIterator for RetroPocket {
+    type Item = Role;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut v: Vec<Role> = vec![];
+        if self.pawn > 0 {
+            v.push(Role::Pawn)
+        };
+        if self.knight > 0 {
+            v.push(Role::Knight)
+        };
+        if self.bishop > 0 {
+            v.push(Role::Bishop)
+        };
+        if self.rook > 0 {
+            v.push(Role::Rook)
+        };
+        if self.queen > 0 {
+            v.push(Role::Queen)
+        };
+        v.into_iter()
+    }
+}
+
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
 pub struct RetroPockets {
     // TODO check if worth switching to `ByColor`
@@ -112,7 +140,13 @@ pub struct RetroPockets {
 }
 
 impl RetroPockets {
-    pub fn turn(&mut self, c: Color) -> &mut RetroPocket {
+    pub fn color(&self, c: Color) -> &RetroPocket {
+        match c {
+            White => &self.white,
+            Black => &self.black,
+        }
+    }
+    pub fn color_mut(&mut self, c: Color) -> &mut RetroPocket {
         match c {
             White => &mut self.white,
             Black => &mut self.black,
@@ -179,5 +213,21 @@ mod tests {
             RetroPocket::from_str("2NBRQ").unwrap(),
             RetroPocket::from_str("NBRQ6").unwrap()
         );
+    }
+
+    #[test]
+    fn test_into_iter() {
+        for conf in &["PNB", "BRQ", "PNBRQ"] {
+            // need to be in the right order
+            let r = RetroPocket::from_str(conf).unwrap();
+            println!("{:?}", r.clone().into_iter());
+            for (x, y) in conf
+                .chars()
+                .map(|c| Role::from_char(c).unwrap())
+                .zip(r.into_iter())
+            {
+                assert_eq!(x, y)
+            }
+        }
     }
 }
