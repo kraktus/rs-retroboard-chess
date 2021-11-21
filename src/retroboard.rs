@@ -393,6 +393,12 @@ mod tests {
         for x in m2 {
             m2_hashset.insert(x);
         }
+        let mut gen_not_exp = m2_hashset.clone();
+        let mut exp_not_gen = m1_hashset.clone();
+        gen_not_exp.retain(|x| !m1_hashset.contains(x));
+        exp_not_gen.retain(|x| !m2_hashset.contains(x));
+        println!("Generated but not expected: {:?}", gen_not_exp);
+        println!("Expected but not generated: {:?}", exp_not_gen);
         assert_eq!(m1_hashset, m2_hashset)
     }
 
@@ -440,5 +446,6 @@ mod tests {
         unpromotion_and_unpromotion_uncapture, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "1", "PR", "unpromotion", "Ug8g7 URg8f7 URg8h7",
         unpromotion_but_uncapture_not_possible, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "1", "", "unpromotion", "Ug8g7",
         no_unpromotion, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "", "PQ", "unpromotion", "",
+        pseudo_legal, "5BN1/k3n3/5n1n/8/5P2/8/nn6/K7 b - - 0 1", "1", "PQ", "all", "a1b1 Qa1b1 Ug8g7 UQg8f7 UQg8h7 Uf8f7 UQf8g7 Qf8g7 f8g7 f4f2 f4f3 Pf4g3 Pf4e3 Qf4g3 Qf4e3",
     }
 }
