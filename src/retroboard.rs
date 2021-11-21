@@ -373,33 +373,92 @@ mod tests {
         }
     }
 
-    fn check_moves(fen: &str, white_p: &str, black_p: &str, gen_type: &str, moves: &str) {
-        let r = RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard");
-        let mut m1_hashset: HashSet<UnMove> = HashSet::new();
-        let mut m2_hashset: HashSet<UnMove> = HashSet::new();
-        let mut m2 = UnMoveList::new();
-        for x in moves.split(' ') {
-            println!("{:?}", x);
-            if !x.is_empty() {
-                m1_hashset.insert(u(x));
+    fn ascii_swap_case(s: &str) -> String {
+        let mut v: Vec<u8> = vec![];
+        for b in s.as_bytes() {
+            if let b'a'..=b'z' | b'A'..=b'Z' = b {
+                v.push(b ^ 0b0010_0000);
+            } else {
+                v.push(*b)
             }
         }
-        match gen_type {
-            "pawn" => r.gen_pawns(&mut m2),
-            "piece" => r.gen_pieces(&mut m2),
-            "unpromotion" => r.gen_unpromotion(&mut m2),
-            "all" | _ => m2 = r.generate_pseudo_legal_unmoves(),
+        String::from_utf8(v).unwrap()
+    }
+
+    fn mirror_square(sq: &str) -> String {
+        let v = sq.as_bytes().to_vec();
+        // first byte is for the column, left unchanged
+        let mut mirrored_v = vec![v[0]];
+        // second byte is the rank, which needs to be mirrored.
+        // square goes from 1 to 8, which is from 49 to 56 in ascii code
+        mirrored_v.push(105 - v[1]);
+        String::from_utf8(mirrored_v).unwrap()
+    }
+
+    /// try to "mirror" a fen, it's the caller responsability to ensure the fen is properly formated.
+    /// It shoulf be faster to manipulate the fen than to reverse the board, but would need to be confirmed at some point
+    fn mirror_fen(fen: &str) -> String {
+        // "r1bq1r2/pp2n3/4N2k/3pPppP/1b1n2Q1/2N5/PP3PP1/R1B1K2R w KQ g6 0 15"
+        // board turn castle en_passant half_moves full_moves
+        let fen_vec: Vec<&str> = fen.split(' ').collect();
+        let color = match fen_vec[1] {
+            "b" => "w",
+            "w" | _ => "b",
         };
-        for x in m2 {
-            m2_hashset.insert(x);
+        // swap the ranks and color of pieces
+        let mirrored_board =
+            ascii_swap_case(&fen_vec[0].split('/').rev().collect::<Vec<_>>().join("/"));
+        let mirrored_castle = ascii_swap_case(fen_vec[2]);
+        let mirrored_en_passant = match fen_vec[3] {
+            "-" => "-".to_string(),
+            sq_str => mirror_square(sq_str),
+        };
+        format!(
+            "{} {} {} {} {} {}",
+            mirrored_board,
+            color,
+            mirrored_castle,
+            mirrored_en_passant,
+            fen_vec.get(4).unwrap_or(&"0"),
+            fen_vec.get(5).unwrap_or(&"1")
+        )
+    }
+
+    fn check_moves(fen: &str, white_p: &str, black_p: &str, gen_type: &str, moves: &str) {
+        for mirrored in [false, true] {
+            let r = if mirrored {
+                RetroBoard::new(&mirror_fen(fen), black_p, white_p)
+                    .expect("Valid mirrored retroboard")
+            } else {
+                RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard")
+            };
+            let mut m1_hashset: HashSet<UnMove> = HashSet::new();
+            let mut m2_hashset: HashSet<UnMove> = HashSet::new();
+            let mut m2 = UnMoveList::new();
+            for x in moves.split(' ') {
+                println!("{:?}", x);
+                if !x.is_empty() {
+                    m1_hashset.insert(if mirrored { u(x).mirror() } else { u(x) });
+                }
+            }
+            match gen_type {
+                "pawn" => r.gen_pawns(&mut m2),
+                "piece" => r.gen_pieces(&mut m2),
+                "unpromotion" => r.gen_unpromotion(&mut m2),
+                "all" | _ => m2 = r.generate_pseudo_legal_unmoves(),
+            };
+            for x in m2 {
+                m2_hashset.insert(x);
+            }
+            let mut gen_not_exp = m2_hashset.clone();
+            let mut exp_not_gen = m1_hashset.clone();
+            gen_not_exp.retain(|x| !m1_hashset.contains(x));
+            exp_not_gen.retain(|x| !m2_hashset.contains(x));
+            println!("Mirrored: {:?}", mirrored);
+            println!("Generated but not expected: {:?}", gen_not_exp);
+            println!("Expected but not generated: {:?}", exp_not_gen);
+            assert_eq!(m1_hashset, m2_hashset)
         }
-        let mut gen_not_exp = m2_hashset.clone();
-        let mut exp_not_gen = m1_hashset.clone();
-        gen_not_exp.retain(|x| !m1_hashset.contains(x));
-        exp_not_gen.retain(|x| !m2_hashset.contains(x));
-        println!("Generated but not expected: {:?}", gen_not_exp);
-        println!("Expected but not generated: {:?}", exp_not_gen);
-        assert_eq!(m1_hashset, m2_hashset)
     }
 
     // macro for generating tests

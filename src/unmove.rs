@@ -108,6 +108,16 @@ impl UnMove {
         self.special_move
             .map_or(false, |x| x == SpecialMove::EnPassant)
     }
+
+    #[inline]
+    pub fn mirror(&self) -> Self {
+        Self {
+            from: self.from.flip_vertical(),
+            to: self.to.flip_vertical(),
+            uncapture: self.uncapture,
+            special_move: self.special_move,
+        }
+    }
 }
 
 impl fmt::Debug for UnMove {
@@ -159,5 +169,29 @@ mod tests {
             assert_eq!(*x, &unmove.to_retro_uci());
             assert_eq!(format!("{:?}", unmove), *x);
         }
+    }
+
+    #[test]
+    fn test_mirror() {
+        assert_eq!(
+            UnMove::from_retro_uci("a1a8").unwrap().mirror(),
+            UnMove::from_retro_uci("a8a1").unwrap()
+        );
+        assert_eq!(
+            UnMove::from_retro_uci("Qa1a8").unwrap().mirror(),
+            UnMove::from_retro_uci("Qa8a1").unwrap()
+        );
+        assert_eq!(
+            UnMove::from_retro_uci("Ua1a2").unwrap().mirror(),
+            UnMove::from_retro_uci("Ua8a7").unwrap()
+        );
+        assert_eq!(
+            UnMove::from_retro_uci("Ua1b2").unwrap().mirror(),
+            UnMove::from_retro_uci("Ua8b7").unwrap()
+        );
+        assert_eq!(
+            UnMove::from_retro_uci("Ef3e4").unwrap().mirror(),
+            UnMove::from_retro_uci("Ef6e5").unwrap()
+        );
     }
 }
