@@ -629,11 +629,14 @@ mod tests {
         pawn_checker_cant_be_blocked, "3k4/8/8/4p3/3K4/8/8/1q6 w - - 0 1", "legal", "e5e6 e5e7",
         checkmating_is_illegal_bc_check, "k7/1Q6/1Kb5/8/8/8/8/8 b - - 0 1", "legal", "b7c7 b7d7 b7e7 b7f7 b7g7 b7h7",
         check_illegal, "1k3R2/8/Kn6/nn3p2/8/8/8/8 b - - 0 1","legal", "f8f7 f8f6",
+        double_check, "3k4/8/8/3R4/7B/8/8/4K3 b - - 0 1","legal", "d5e5",
     }
 
     gen_tests_unmoves! {
         unpromoting_legal_not_moving, "6nR/n1k5/Kn5p/nn6/8/8/8/8 b - - 0 1", "1", "N","legal", "Uh8h7 UNh8g7",
         uncapturing_create_a_blocker, "1k3R2/8/Kn6/nn3p2/8/8/8/8 b - - 0 1", "", "PQ","legal", "f8f7 f8f6 Qf8f7 Qf8f6 Qf8g8 Qf8h8",
         legal_pawn_uncaptures, "8/8/8/8/5k2/6P1/8/1K6 b - - 0 1", "", "PNBRQ","legal", "g3g2 Pg3f2 Pg3h2 Ng3f2 Ng3h2 Bg3f2 Bg3h2 Rg3f2 Rg3h2 Qg3f2 Qg3h2",
+        unpromotion_illegal, "3kR3/8/8/8/8/8/8/3K4 b - - 0 1", "1", "","legal", "e8e7 e8e6 e8e5 e8e4 e8e3 e8e2 e8e1",
+        unpromotion_uncapture, "3kR3/8/8/8/8/8/8/3K4 b - - 0 1", "1", "N","legal", "Ne8e7 Ne8e6 Ne8e5 Ne8e4 Ne8e3 Ne8e2 Ne8e1 UNe8d7 UNe8f7 Ne8f8 Ne8g8 Ne8h8 e8e1 e8e6 e8e2 e8e5 e8e7 e8e3 e8e4",
     }
 }
