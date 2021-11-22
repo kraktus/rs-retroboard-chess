@@ -136,6 +136,8 @@ mod tests {
         assert_eq!(simple_move.from, Square::E2);
         assert_eq!(simple_move.to, Square::E4);
         assert_eq!(simple_move.uncapture, None);
+        assert!(!simple_move.is_unpromotion());
+        assert!(!simple_move.is_en_passant());
     }
 
     #[test]
@@ -144,6 +146,8 @@ mod tests {
         assert_eq!(simple_move.from, Square::E2);
         assert_eq!(simple_move.to, Square::E4);
         assert_eq!(simple_move.uncapture.unwrap(), Role::Pawn);
+        assert!(!simple_move.is_unpromotion());
+        assert!(!simple_move.is_en_passant());
     }
 
     #[test]
@@ -152,6 +156,7 @@ mod tests {
         assert_eq!(simple_move.from, Square::E8);
         assert_eq!(simple_move.to, Square::E7);
         assert!(simple_move.is_unpromotion());
+        assert!(!simple_move.is_en_passant());
     }
 
     #[test]
@@ -160,6 +165,7 @@ mod tests {
         assert_eq!(simple_move.from, Square::E3);
         assert_eq!(simple_move.to, Square::D4);
         assert!(simple_move.is_en_passant());
+        assert!(!simple_move.is_unpromotion());
     }
 
     #[test]
