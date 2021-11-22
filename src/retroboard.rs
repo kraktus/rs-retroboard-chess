@@ -624,9 +624,16 @@ mod tests {
     gen_tests_unmoves_no_pockets! {
         giving_check_illegal, "1k5R/8/Kn6/nn5p/8/8/8/8 b - - 0 1", "legal", "h8h7 h8h6",
         blocker, "1k5R/7p/1K3N2/8/8/8/8/8 b - - 0 1", "legal", "f6e8 f6g8",
+        pinned_knight, "3k1N1R/8/7p/8/8/8/8/K7 b - - 0 1", "legal", "h8g8 h8h7 a1b1 a1b2 a1a2",
+        knight_checker_cant_be_blocked, "3kn3/8/3K4/8/8/8/8/q7 w - - 0 1", "legal", "e8c7 e8f6 e8f6 e8g7",
+        pawn_checker_cant_be_blocked, "3k4/8/8/4p3/3K4/8/8/1q6 w - - 0 1", "legal", "e5e6 e5e7",
+        checkmating_is_illegal_bc_check, "k7/1Q6/1Kb5/8/8/8/8/8 b - - 0 1", "legal", "b7c7 b7d7 b7e7 b7f7 b7g7 b7h7",
+        check_illegal, "1k3R2/8/Kn6/nn3p2/8/8/8/8 b - - 0 1","legal", "f8f7 f8f6",
     }
 
     gen_tests_unmoves! {
         unpromoting_legal_not_moving, "6nR/n1k5/Kn5p/nn6/8/8/8/8 b - - 0 1", "1", "N","legal", "Uh8h7 UNh8g7",
+        uncapturing_create_a_blocker, "1k3R2/8/Kn6/nn3p2/8/8/8/8 b - - 0 1", "", "PQ","legal", "f8f7 f8f6 Qf8f7 Qf8f6 Qf8g8 Qf8h8",
+        legal_pawn_uncaptures, "8/8/8/8/5k2/6P1/8/1K6 b - - 0 1", "", "PNBRQ","legal", "g3g2 Pg3f2 Pg3h2 Ng3f2 Ng3h2 Bg3f2 Bg3h2 Rg3f2 Rg3h2 Qg3f2 Qg3h2",
     }
 }
