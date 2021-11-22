@@ -1,6 +1,7 @@
 use shakmaty::Piece;
 use shakmaty::{
-    attacks, Bitboard, Board, Color, Color::Black, Color::White, File, Rank, Role, Square,
+    attacks, fen::Fen, Bitboard, Board, CastlingMode, Chess, Color, Color::Black, Color::White,
+    Rank, Role, Square,
 };
 use std::fmt;
 
@@ -197,6 +198,18 @@ impl RetroBoard {
     }
 
     #[inline]
+    fn epd(&self) -> String {
+        format!(
+            "{} {}",
+            self.board.board_fen(Bitboard::EMPTY),
+            match self.retro_turn {
+                Black => "w",
+                White => "b",
+            }
+        )
+    }
+
+    #[inline]
     fn checkers(&self, color: Color) -> Bitboard {
         self.board
             .attacks_to(self.king_of(color), !color, self.occupied())
@@ -327,6 +340,15 @@ impl fmt::Debug for RetroBoard {
     }
 }
 
+impl From<RetroBoard> for Chess {
+    fn from(item: RetroBoard) -> Self {
+        let setup: Fen = item.epd().parse().expect("syntactically correct FEN");
+        setup
+            .position(CastlingMode::Standard)
+            .expect(&format!("Legal Position: {}", setup))
+    }
+}
+
 fn unicode(c: char) -> char {
     match c {
         'R' => '♖',
@@ -355,6 +377,7 @@ mod tests {
     use super::*;
     use indoc::indoc;
     use paste::paste;
+    use shakmaty::{uci::Uci, Position};
     // use pretty_assertions::{assert_eq, assert_ne};
     use std::collections::HashSet;
 
@@ -487,7 +510,8 @@ mod tests {
         let fen_vec: Vec<&str> = fen.split(' ').collect();
         let color = match fen_vec[1] {
             "b" => "w",
-            "w" | _ => "b",
+            "w" => "b",
+            _ => panic!("Turn should be either black or white"),
         };
         // swap the ranks and color of pieces
         let mirrored_board =
@@ -516,6 +540,7 @@ mod tests {
             } else {
                 RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard")
             };
+            let _: Chess = r.clone().into(); // check if position is legal
             let mut m1_hashset: HashSet<UnMove> = HashSet::new();
             let mut m2_hashset: HashSet<UnMove> = HashSet::new();
             let mut m2 = UnMoveList::new();
@@ -534,7 +559,26 @@ mod tests {
                 _ => panic!("Choose proper generation method"),
             };
             for x in m2 {
-                m2_hashset.insert(x);
+                m2_hashset.insert(x.clone());
+                if gen_type == "legal" {
+                    let mut r_after_unmove = r.clone();
+                    r_after_unmove.push(x.clone());
+                    let chess_after_unmove: Chess = r_after_unmove.into();
+                    assert!(chess_after_unmove.is_legal(
+                        &Uci::from_ascii(
+                            dbg! {format!("{}{}{}", x.to, x.from, if x.is_unpromotion()    {
+                            r.board.piece_at(x.from).unwrap().role.char().to_string()
+                                } else {
+                                    "".to_string()
+                            }
+                            )}
+                            .as_bytes()
+                        )
+                        .expect("Valid uci")
+                        .to_move(&chess_after_unmove)
+                        .expect("correct move")
+                    ));
+                }
             }
             let mut gen_not_exp = m2_hashset.clone();
             let mut exp_not_gen = m1_hashset.clone();
