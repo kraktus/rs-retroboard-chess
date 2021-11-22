@@ -76,28 +76,49 @@ impl RetroBoard {
         self.retro_turn = !self.retro_turn;
     }
 
-    pub fn pseudo_legal_unmoves(&self) -> UnMoveList {
-        let mut moves = UnMoveList::new();
-        self.gen_pieces(&mut moves);
-        self.gen_unpromotion(&mut moves);
-        self.gen_pawns(&mut moves);
-        moves
+    pub fn pseudo_legal_unmoves(&self, moves: &mut UnMoveList) {
+        self.gen_pieces(moves);
+        self.gen_unpromotion(moves);
+        self.gen_pawns(moves);
     }
 
     /// Generate legal unmoves, which are all the pseudo legal unmoves which do not put the opponent's king in check.
     /// If the opponent's king is in check at the beginning of our turn, the only legal unmoves are those which stop it from being in check.
     pub fn legal_unmoves(&self) -> UnMoveList {
         // supposing the opponent's king is not in check at the beginning of our retro_turn
-        let mut moves: UnMoveList = self.pseudo_legal_unmoves();
+        let mut moves: UnMoveList = UnMoveList::new();
         let checkers = self.checkers(!self.retro_turn);
         let blockers = self.slider_blockers(self.us(), self.king_of(!self.retro_turn));
         let nb_checkers = checkers.count();
         if nb_checkers > 2 {
             // no unmoves possible
-            return UnMoveList::new();
-        } else if nb_checkers == 2 { // TODO
+            return moves;
+        } else if nb_checkers == 2 {
+            // TODO
+            if checkers.is_subset(self.board.steppers()) {
+                return moves;
+            };
+            // If there is one slider and one stepper, the only move is the stepper going ahead of the slider.
+            // Or unpromotion
+            if let Some(from) = (checkers & self.board.steppers()).first() {
+                let other_checker = (checkers & self.board.sliders()).first().unwrap();
+                if let Some(to) =
+                    (attacks::attacks(from, self.board.piece_at(from).unwrap(), self.occupied())
+                        & attacks::between(self.king_of(!self.retro_turn), other_checker))
+                    .first()
+                {
+                    moves.push(UnMove {
+                        from,
+                        to,
+                        uncapture: None,
+                        special_move: None,
+                    });
+                    self.gen_uncaptures(from, to, false, &mut moves);
+                }
+            }
         } else {
             // 1 or no checker.
+            self.pseudo_legal_unmoves(&mut moves);
             moves.retain(|m| self.is_safe(m, blockers, checkers.first()));
         }
 
@@ -218,20 +239,24 @@ impl RetroBoard {
     fn gen_unpromotion(&self, moves: &mut UnMoveList) {
         if self.pockets.color(self.retro_turn).unpromotion > 0 {
             for from in self.us() & Bitboard::relative_rank(self.retro_turn, Rank::Eighth) {
-                let to = from
-                    .offset(self.retro_turn.fold(-8, 8))
-                    .expect("We're in the eighth rank and going back so square exists");
-                if !self.board.piece_at(to).is_some() {
-                    moves.push(UnMove {
-                        from,
-                        to,
-                        uncapture: None,
-                        special_move: Some(SpecialMove::UnPromotion),
-                    });
-                };
-                self.gen_pawn_uncaptures(from, true, moves);
+                self.gen_unpromotion_on(from, moves);
             }
         }
+    }
+
+    fn gen_unpromotion_on(&self, from: Square, moves: &mut UnMoveList) {
+        let to = from
+            .offset(self.retro_turn.fold(-8, 8))
+            .expect("We're in the eighth rank and going back so square exists");
+        if !self.board.piece_at(to).is_some() {
+            moves.push(UnMove {
+                from,
+                to,
+                uncapture: None,
+                special_move: Some(SpecialMove::UnPromotion),
+            });
+        };
+        self.gen_pawn_uncaptures(from, true, moves);
     }
 
     fn gen_pieces(&self, moves: &mut UnMoveList) {
@@ -554,11 +579,12 @@ mod tests {
                 "pawn" => r.gen_pawns(&mut m2),
                 "piece" => r.gen_pieces(&mut m2),
                 "unpromotion" => r.gen_unpromotion(&mut m2),
-                "pseudo" => m2 = r.pseudo_legal_unmoves(),
+                "pseudo" => r.pseudo_legal_unmoves(&mut m2),
                 "legal" => m2 = r.legal_unmoves(),
                 _ => panic!("Choose proper generation method"),
             };
-            for x in m2 {
+            for x in m2.clone() {
+                assert!(!m2_hashset.contains(&x)); // check for move duplicated
                 m2_hashset.insert(x.clone());
                 if gen_type == "legal" {
                     let mut r_after_unmove = r.clone();
@@ -653,11 +679,15 @@ mod tests {
             } else {
                 RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard")
             };
-            for m in r.pseudo_legal_unmoves() {
+            let mut unmove_list_1 = UnMoveList::new();
+            r.pseudo_legal_unmoves(&mut unmove_list_1);
+            for m in unmove_list_1 {
                 counter += 1;
                 let mut r2 = r.clone();
                 r2.push(m);
-                for _ in r2.pseudo_legal_unmoves() {
+                let mut unmove_list_2 = UnMoveList::new();
+                r2.pseudo_legal_unmoves(&mut unmove_list_2);
+                for _ in unmove_list_2 {
                     counter += 1
                 }
             }
