@@ -94,27 +94,32 @@ impl RetroBoard {
             // no unmoves possible
             return moves;
         } else if nb_checkers == 2 {
-            // TODO
             if checkers.is_subset(self.board.steppers()) {
                 return moves;
             };
-            // If there is one slider and one stepper, the only move is the stepper going ahead of the slider.
-            // Or unpromotion
-            if let Some(from) = (checkers & self.board.steppers()).first() {
-                let other_checker = (checkers & self.board.sliders()).first().unwrap();
-                if let Some(to) =
-                    (attacks::attacks(from, self.board.piece_at(from).unwrap(), self.occupied())
-                        & attacks::between(self.king_of(!self.retro_turn), other_checker))
-                    .first()
-                {
-                    moves.push(UnMove {
-                        from,
-                        to,
-                        uncapture: None,
-                        special_move: None,
-                    });
-                    self.gen_uncaptures(from, to, false, &mut moves);
-                }
+
+            // should work if two sliders or one slider one stepper. If there is one stepper, the slider should be the furthest piece.
+            let (from, furthest_checker) =
+                closest_further_square(checkers, self.king_of(!self.retro_turn));
+
+            // the closest piece must come into the way of the further one
+            if let Some(to) =
+                (attacks::attacks(from, self.board.piece_at(from).unwrap(), self.occupied())
+                    & attacks::between(self.king_of(!self.retro_turn), furthest_checker))
+                .first()
+            {
+                moves.push(UnMove {
+                    from,
+                    to,
+                    uncapture: None,
+                    special_move: None,
+                });
+                self.gen_uncaptures(from, to, false, &mut moves);
+                if Bitboard::BACKRANKS.contains(from) {
+                    self.gen_uncaptures(from, to, true, &mut moves);
+                };
+                // we do not check if the move itself gives check before
+                moves.retain(|m| !self.does_unmove_give_check(m));
             }
         } else {
             // 1 or no checker.
@@ -154,22 +159,7 @@ impl RetroBoard {
         }
 
         // check if the unmove attack the king
-        if (attacks::attacks(
-            unmove.to,
-            if unmove.is_unpromotion() {
-                self.retro_turn.pawn()
-            } else {
-                self.board.piece_at(unmove.from).unwrap()
-            },
-            self.occupied()
-                ^ if unmove.uncapture.is_some() {
-                    Bitboard::EMPTY
-                } else {
-                    unmove.from.into()
-                },
-        ) & king)
-            .any()
-        {
+        if self.does_unmove_give_check(unmove) {
             return false;
         }
 
@@ -186,6 +176,24 @@ impl RetroBoard {
         // or it does not move, and then we need to check if a piece goes between it.
         checker.unwrap() == unmove.from
             || attacks::between(checker.unwrap(), king).contains(unmove.to)
+    }
+
+    fn does_unmove_give_check(&self, unmove: &UnMove) -> bool {
+        (attacks::attacks(
+            unmove.to,
+            if unmove.is_unpromotion() {
+                self.retro_turn.pawn()
+            } else {
+                self.board.piece_at(unmove.from).unwrap()
+            },
+            self.occupied()
+                ^ if unmove.uncapture.is_some() {
+                    Bitboard::EMPTY
+                } else {
+                    unmove.from.into()
+                },
+        ) & self.king_of(!self.retro_turn))
+        .any()
     }
 
     #[inline]
@@ -397,12 +405,21 @@ fn show_board(board: &Board) -> String {
     board_unicode
 }
 
+fn closest_further_square(bb: Bitboard, of: Square) -> (Square, Square) {
+    let (sq_1, sq_2) = (bb.first().unwrap(), bb.last().unwrap());
+    if sq_1.distance(of) < sq_2.distance(of) {
+        (sq_1, sq_2)
+    } else {
+        (sq_2, sq_1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use indoc::indoc;
     use paste::paste;
-    use shakmaty::{uci::Uci, Position};
+    use shakmaty::{uci::Uci, Position, Setup};
     // use pretty_assertions::{assert_eq, assert_ne};
     use std::collections::HashSet;
 
@@ -557,6 +574,32 @@ mod tests {
         )
     }
 
+    fn move_legal(r: &RetroBoard, pos: Chess, unmove: UnMove) -> bool {
+        pos.is_legal(
+            &Uci::from_ascii(
+                format!(
+                    "{}{}{}",
+                    unmove.to,
+                    unmove.from,
+                    if unmove.is_unpromotion() {
+                        r.board
+                            .piece_at(unmove.from)
+                            .unwrap()
+                            .role
+                            .char()
+                            .to_string()
+                    } else {
+                        "".to_string()
+                    }
+                )
+                .as_bytes(),
+            )
+            .expect("Valid uci")
+            .to_move(&pos)
+            .expect("correct move"),
+        )
+    }
+
     fn check_moves(fen: &str, white_p: &str, black_p: &str, gen_type: &str, moves: &str) {
         for mirrored in [false, true] {
             let r = if mirrored {
@@ -586,25 +629,6 @@ mod tests {
             for x in m2.clone() {
                 assert!(!m2_hashset.contains(&x)); // check for move duplicated
                 m2_hashset.insert(x.clone());
-                if gen_type == "legal" {
-                    let mut r_after_unmove = r.clone();
-                    r_after_unmove.push(x.clone());
-                    let chess_after_unmove: Chess = r_after_unmove.into();
-                    assert!(chess_after_unmove.is_legal(
-                        &Uci::from_ascii(
-                            dbg! {format!("{}{}{}", x.to, x.from, if x.is_unpromotion()    {
-                            r.board.piece_at(x.from).unwrap().role.char().to_string()
-                                } else {
-                                    "".to_string()
-                            }
-                            )}
-                            .as_bytes()
-                        )
-                        .expect("Valid uci")
-                        .to_move(&chess_after_unmove)
-                        .expect("correct move")
-                    ));
-                }
             }
             let mut gen_not_exp = m2_hashset.clone();
             let mut exp_not_gen = m1_hashset.clone();
@@ -614,7 +638,15 @@ mod tests {
             println!("Mirrored: {:?}", mirrored);
             println!("Generated but not expected: {:?}", gen_not_exp);
             println!("Expected but not generated: {:?}", exp_not_gen);
-            assert_eq!(m1_hashset, m2_hashset)
+            assert_eq!(m1_hashset, m2_hashset);
+            for x in m2.clone() {
+                if gen_type == "legal" {
+                    let mut r_after_unmove = r.clone();
+                    r_after_unmove.push(x.clone());
+                    let chess_after_unmove: Chess = r_after_unmove.into();
+                    assert!(move_legal(&r, chess_after_unmove, x));
+                }
+            }
         }
     }
 
@@ -703,7 +735,14 @@ mod tests {
         pawn_checker_cant_be_blocked, "3k4/8/8/4p3/3K4/8/8/1q6 w - - 0 1", "legal", "e5e6 e5e7",
         checkmating_is_illegal_bc_check, "k7/1Q6/1Kb5/8/8/8/8/8 b - - 0 1", "legal", "b7c7 b7d7 b7e7 b7f7 b7g7 b7h7",
         check_illegal, "1k3R2/8/Kn6/nn3p2/8/8/8/8 b - - 0 1","legal", "f8f7 f8f6",
-        double_check, "3k4/8/8/3R4/7B/8/8/4K3 b - - 0 1","legal", "d5e5",
+        double_check, "3k4/8/8/3R4/7B/8/8/4K3 b - - 0 1","legal", "d5g5",
+        double_check_no_moves, "8/8/3R1k2/8/7B/8/8/4K3 b - - 0 1","legal", "",
+        double_check_queen_knight, "8/4k3/2N5/8/8/4Q3/8/4K3 b - - 0 1","legal", "c6e5",
+        double_check_queen_knight_impossible, "4k3/2N5/4Q3/8/8/8/8/3K4 b - - 0 1","legal", "",
+        double_check_double_pawns, "4k3/3P1P2/8/8/8/8/8/3K4 b - - 0 1","legal", "",
+        double_check_double_knights, "4k3/2N5/5N2/8/8/8/8/3K4 b - - 0 1","legal", "",
+        double_check_knight_pawn, "4k3/2N2P2/8/8/8/8/8/3K4 b - - 0 1","legal", "",
+        double_check_queens, "4kQ2/8/4Q3/8/8/8/8/3K4 b - - 0 1","legal", "",
     }
 
     gen_tests_unmoves! {
@@ -712,5 +751,40 @@ mod tests {
         legal_pawn_uncaptures, "8/8/8/8/5k2/6P1/8/1K6 b - - 0 1", "", "PNBRQ","legal", "g3g2 Pg3f2 Pg3h2 Ng3f2 Ng3h2 Bg3f2 Bg3h2 Rg3f2 Rg3h2 Qg3f2 Qg3h2",
         unpromotion_illegal, "3kR3/8/8/8/8/8/8/3K4 b - - 0 1", "1", "","legal", "e8e7 e8e6 e8e5 e8e4 e8e3 e8e2 e8e1",
         unpromotion_uncapture, "3kR3/8/8/8/8/8/8/3K4 b - - 0 1", "1", "N","legal", "Ne8e7 Ne8e6 Ne8e5 Ne8e4 Ne8e3 Ne8e2 Ne8e1 UNe8d7 UNe8f7 Ne8f8 Ne8g8 Ne8h8 e8e1 e8e6 e8e2 e8e5 e8e7 e8e3 e8e4",
+        double_check_with_uncaptures, "3k4/8/8/3R4/7B/8/8/4K3 b - - 0 1","", "PNBRQ", "legal", "d5g5 Pd5g5 Nd5g5 Bd5g5 Rd5g5 Qd5g5",
+        double_check_queens_unpromotion, "4kQ2/8/4Q3/8/8/8/8/3K4 b - - 0 1","1", "PNBRQ", "legal", "UBf8e7 UNf8e7 URf8e7 UQf8e7",
+        //Wokrs fine but illegal position triple_check, "8/1R1k2R1/8/8/8/3Q4/8/3K4 b - - 0 1","1PNQRB", "PNBRQ", "legal", "",
+    }
+
+    #[test]
+    fn test_final_unmoves() {
+        for mirrored in [false, true] {
+            let fen = "q4N2/1p5k/8/8/6P1/4Q3/1K1PB3/7r b - - 0 1";
+            let white_p = "2PNBRQ";
+            let black_p = "3NBRQP";
+            let mut counter: u32 = 0;
+            let r = if mirrored {
+                RetroBoard::new(&mirror_fen(fen), black_p, white_p)
+                    .expect("Valid mirrored retroboard")
+            } else {
+                RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard")
+            };
+            let _: Chess = r.clone().into(); // check if position is legal
+            for m in r.legal_unmoves() {
+                counter += 1;
+                let mut r2 = r.clone();
+                r2.push(m.clone());
+                let chess_after_unmove: Chess = r2.clone().into();
+                assert!(move_legal(&r, chess_after_unmove, m));
+                for m2 in r2.legal_unmoves() {
+                    counter += 1;
+                    let mut r3 = r2.clone();
+                    r3.push(m2.clone());
+                    let chess_after_unmove2: Chess = r3.clone().into();
+                    assert!(move_legal(&r2, chess_after_unmove2, m2));
+                }
+            }
+            assert_eq!(counter, 3975)
+        }
     }
 }
