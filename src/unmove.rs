@@ -98,6 +98,11 @@ impl UnMove {
     }
 
     #[inline]
+    pub fn is_uncapture(&self) -> bool {
+        self.uncapture.is_some()
+    }
+
+    #[inline]
     pub fn is_unpromotion(&self) -> bool {
         self.special_move
             .map_or(false, |x| x == SpecialMove::UnPromotion)

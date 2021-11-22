@@ -89,22 +89,50 @@ impl RetroBoard {
         // supposing the opponent's king is not in check at the beginning of our retro_turn
         let mut moves: UnMoveList = self.pseudo_legal_unmoves();
         let checkers = self.checkers(!self.retro_turn);
+        let blockers = self.slider_blockers(self.us(), self.king_of(!self.retro_turn));
         let nb_checkers = checkers.count();
         if nb_checkers > 2 {
             // no unmoves possible
             return UnMoveList::new();
-        } else if nb_checkers == 2 {
-        } else if nb_checkers == 1 { // need to move the checker, or block it.
+        } else if nb_checkers == 2 { // TODO
         } else {
-            moves.retain(|m| self.is_safe(m));
+            // 1 or no checker.
+            moves.retain(|m| self.is_safe(m, blockers, checkers.first()));
         }
 
         moves
     }
 
-    /// Check is the moves attack the king
-    fn is_safe(&self, unmove: &UnMove) -> bool {
-        (attacks::attacks(
+    // from shakmaty code-source
+    fn slider_blockers(&self, our_pieces: Bitboard, king: Square) -> Bitboard {
+        let snipers = (attacks::rook_attacks(king, Bitboard(0)) & self.board.rooks_and_queens())
+            | (attacks::bishop_attacks(king, Bitboard(0)) & self.board.bishops_and_queens());
+
+        let mut blockers = Bitboard(0);
+
+        for sniper in snipers & our_pieces {
+            let b = attacks::between(king, sniper) & self.occupied();
+
+            if !b.more_than_one() {
+                blockers.add(b);
+            }
+        }
+
+        blockers
+    }
+
+    fn is_safe(&self, unmove: &UnMove, blockers: Bitboard, checker: Option<Square>) -> bool {
+        let king = self.king_of(!self.retro_turn);
+        // If we remove a blocker without letting a piece behing we'll put the king in check, so the unmove is invalid
+        if !unmove.is_uncapture()
+            && blockers.contains(unmove.from)
+            && !attacks::aligned(unmove.from, unmove.to, king)
+        {
+            return false;
+        }
+
+        // check if the unmove attack the king
+        if (attacks::attacks(
             unmove.to,
             if unmove.is_unpromotion() {
                 self.retro_turn.pawn()
@@ -117,8 +145,25 @@ impl RetroBoard {
                 } else {
                     unmove.from.into()
                 },
-        ) & self.board.king_of(!self.retro_turn).unwrap())
-        .is_empty()
+        ) & king)
+            .any()
+        {
+            return false;
+        }
+
+        // no checker we can end here
+        if !checker.is_some() {
+            return true;
+        }
+
+        // if the checker does not move and is not a slider, then at the end the king will still be in check
+        if self.board.steppers().contains(checker.unwrap()) && checker.unwrap() != unmove.from {
+            return false;
+        }
+        // Now we know the checker is a slider and either it moves away to a square where it does not put the king in check (we already checked if the destination square gives check, so only left to check if it is the checker)
+        // or it does not move, and then we need to check if a piece goes between it.
+        checker.unwrap() == unmove.from
+            || attacks::between(checker.unwrap(), king).contains(unmove.to)
     }
 
     #[inline]
@@ -147,9 +192,14 @@ impl RetroBoard {
     }
 
     #[inline]
+    fn king_of(&self, color: Color) -> Square {
+        self.board.king_of(color).unwrap()
+    }
+
+    #[inline]
     fn checkers(&self, color: Color) -> Bitboard {
         self.board
-            .attacks_to(self.board.king_of(color).unwrap(), !color, self.occupied())
+            .attacks_to(self.king_of(color), !color, self.occupied())
     }
 
     fn gen_unpromotion(&self, moves: &mut UnMoveList) {
