@@ -53,7 +53,7 @@ impl RetroBoard {
             .expect("Unmove: from square should contain a piece");
         self.halfmoves += 1;
 
-        if let Some(role) = m.uncapture {
+        if let Some(role) = m.uncapture() {
             self.halfmoves = 0;
             self.board.set_piece_at(
                 m.from,
@@ -112,12 +112,7 @@ impl RetroBoard {
                     & attacks::between(self.king_of(!self.retro_turn), furthest_checker))
                 .first()
             {
-                moves.push(UnMove {
-                    from,
-                    to,
-                    uncapture: None,
-                    special_move: None,
-                });
+                moves.push(UnMove::new(from, to, None, None));
                 self.gen_uncaptures(from, to, false, &mut moves);
                 if Bitboard::BACKRANKS.contains(from) {
                     self.gen_uncaptures(from, to, true, &mut moves);
@@ -191,7 +186,7 @@ impl RetroBoard {
                 self.board.piece_at(unmove.from).unwrap()
             },
             self.occupied()
-                ^ if unmove.uncapture.is_some() {
+                ^ if unmove.is_uncapture() {
                     Bitboard::EMPTY
                 } else {
                     unmove.from.into()
@@ -264,12 +259,7 @@ impl RetroBoard {
             .offset(self.retro_turn.fold(-8, 8))
             .expect("We're in the eighth rank and going back so square exists");
         if !self.board.piece_at(to).is_some() {
-            moves.push(UnMove {
-                from,
-                to,
-                uncapture: None,
-                special_move: Some(SpecialMove::UnPromotion),
-            });
+            moves.push(UnMove::new(from, to, None, Some(SpecialMove::UnPromotion)));
         };
         self.gen_pawn_uncaptures(from, true, moves);
     }
@@ -279,12 +269,7 @@ impl RetroBoard {
             for to in attacks::attacks(from, self.board.piece_at(from).unwrap(), self.occupied())
                 & !self.occupied()
             {
-                moves.push(UnMove {
-                    from,
-                    to,
-                    uncapture: None,
-                    special_move: None,
-                });
+                moves.push(UnMove::new(from, to, None, None));
                 self.gen_uncaptures(from, to, false, moves)
             }
         }
@@ -302,12 +287,12 @@ impl RetroBoard {
 
             for from in ep_pawns {
                 for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() {
-                    moves.push(UnMove {
+                    moves.push(UnMove::new(
                         from,
                         to,
-                        uncapture: Some(Role::Pawn),
-                        special_move: Some(SpecialMove::EnPassant),
-                    });
+                        Some(Role::Pawn),
+                        Some(SpecialMove::EnPassant),
+                    ));
                 }
             }
         }
@@ -328,23 +313,13 @@ impl RetroBoard {
 
         for to in single_moves & !Bitboard::BACKRANKS {
             if let Some(from) = to.offset(self.retro_turn.fold(8, -8)) {
-                moves.push(UnMove {
-                    from,
-                    to,
-                    uncapture: None,
-                    special_move: None,
-                });
+                moves.push(UnMove::new(from, to, None, None));
             }
         }
 
         for to in double_moves {
             if let Some(from) = to.offset(self.retro_turn.fold(16, -16)) {
-                moves.push(UnMove {
-                    from,
-                    to,
-                    uncapture: None,
-                    special_move: None,
-                });
+                moves.push(UnMove::new(from, to, None, None));
             }
         }
     }
@@ -361,18 +336,21 @@ impl RetroBoard {
             .color(!self.retro_turn)
             .clone()
             .into_iter()
-            .map(|r| UnMove {
-                from,
-                to,
-                uncapture: Some(r),
-                special_move: if unpromotion {
-                    Some(SpecialMove::UnPromotion)
-                } else {
-                    None
-                },
+            .map(|r| {
+                UnMove::new(
+                    from,
+                    to,
+                    Some(r),
+                    if unpromotion {
+                        Some(SpecialMove::UnPromotion)
+                    } else {
+                        None
+                    },
+                )
             })
         {
-            if !(Bitboard::BACKRANKS.contains(unmove.from) && unmove.uncapture == Some(Role::Pawn))
+            if !(Bitboard::BACKRANKS.contains(unmove.from)
+                && unmove.uncapture() == Some(Role::Pawn))
             {
                 // pawns cannot be uncaptured on backrank
                 moves.push(unmove)

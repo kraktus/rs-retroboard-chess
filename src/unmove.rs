@@ -33,7 +33,7 @@ impl FromStr for SpecialMove {
 pub struct UnMove {
     pub from: Square,
     pub to: Square,
-    pub uncapture: Option<Role>,
+    uncapture: Option<Role>,
     pub special_move: Option<SpecialMove>,
 }
 
@@ -81,6 +81,21 @@ impl UnMove {
             .ok_or(ParseRetroUciError)
     }
 
+    #[inline]
+    pub fn new(
+        from: Square,
+        to: Square,
+        uncapture: Option<Role>,
+        special_move: Option<SpecialMove>,
+    ) -> Self {
+        Self {
+            from,
+            to,
+            uncapture,
+            special_move,
+        }
+    }
+
     pub fn to_retro_uci(&self) -> String {
         format!(
             "{}{}{}{}",
@@ -100,6 +115,15 @@ impl UnMove {
     #[inline]
     pub fn is_uncapture(&self) -> bool {
         self.uncapture.is_some()
+    }
+
+    #[inline]
+    pub fn uncapture(&self) -> Option<Role> {
+        if self.is_en_passant() {
+            Some(Role::Pawn)
+        } else {
+            self.uncapture
+        }
     }
 
     #[inline]
