@@ -368,6 +368,7 @@ impl PartialEq for RetroBoard {
         self.retro_turn == other.retro_turn
             && self.board == other.board
             && self.pockets == other.pockets
+            && self.ep_square == other.ep_square
     }
 }
 
@@ -376,11 +377,12 @@ impl Eq for RetroBoard {}
 impl fmt::Debug for RetroBoard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&format!(
-            "\n{}\nretro_turn = {:?}\n{:?}\nhalfmoves: {:?}",
+            "\n{}\nretro_turn = {:?}\n{:?}\nhalfmoves: {:?}\nep square: {:?}",
             show_board(&self.board),
             self.retro_turn,
             self.pockets,
-            self.halfmoves
+            self.halfmoves,
+            self.ep_square,
         ))
     }
 }
@@ -467,7 +469,8 @@ mod tests {
 
                 retro_turn = Black
                 RetroPockets { black: \"PPNBBRQ4\", white: \"PPPNBR2\" }
-                halfmoves: 0"}
+                halfmoves: 0
+                ep square: None"}
         )
     }
 
@@ -522,6 +525,16 @@ mod tests {
                     .unwrap()
             )
         }
+    }
+
+    #[test]
+    fn test_push_en_passant() {
+        let mut r = RetroBoard::new("k7/8/2P5/8/8/8/8/2K5 b - - 0 1", "", "P").unwrap();
+        r.push(u("Ec6d5"));
+        assert_eq!(
+            r,
+            RetroBoard::new("k7/8/8/2pP4/8/8/8/2K5 w - c6 0 1", "", "").unwrap()
+        )
     }
 
     #[test]
