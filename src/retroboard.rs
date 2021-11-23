@@ -52,6 +52,7 @@ impl RetroBoard {
             .remove_piece_at(m.from)
             .expect("Unmove: from square should contain a piece");
         self.halfmoves += 1;
+        self.ep_square = None;
 
         if let Some(role) = m.uncapture() {
             self.halfmoves = 0;
@@ -77,6 +78,9 @@ impl RetroBoard {
         } else {
             self.board.set_piece_at(m.to, moved_piece);
         };
+        if m.is_en_passant() {
+            self.ep_square = Some(m.from);
+        }
         self.retro_turn = !self.retro_turn;
     }
 
