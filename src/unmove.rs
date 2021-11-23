@@ -114,17 +114,14 @@ impl UnMove {
             .map_or(false, |x| x == SpecialMove::EnPassant)
     }
 
-    #[inline]
     pub fn uncapture_square(&self) -> Option<Square> {
-        if self.is_uncapture() {
-            Some(if self.is_en_passant() {
+        self.uncapture.map(|_| {
+            if self.is_en_passant() {
                 Square::from_coords(self.from.file(), self.to.rank())
             } else {
                 self.from
-            })
-        } else {
-            None
-        }
+            }
+        })
     }
 
     #[inline]
