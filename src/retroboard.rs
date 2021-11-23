@@ -56,7 +56,7 @@ impl RetroBoard {
         if let Some(role) = m.uncapture() {
             self.halfmoves = 0;
             self.board.set_piece_at(
-                m.from,
+                m.uncapture_square().unwrap(),
                 Piece {
                     role,
                     color: !self.retro_turn,
