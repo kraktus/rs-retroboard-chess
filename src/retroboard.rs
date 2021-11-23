@@ -13,7 +13,7 @@ pub struct RetroBoard {
     retro_turn: Color,
     pockets: RetroPockets,
     halfmoves: u8, // Number of plies since a breaking unmove has been done.
-                   // TODO en-passant
+    ep_square: Option<Square>,
 }
 
 /// A `Board` where `Unmove` are played and all legal `Unmove` can be generated, on top of every thing a `Board` can do.
@@ -33,12 +33,16 @@ impl RetroBoard {
         }?;
         let board = Board::from_board_fen(fen_vec.get(0)?.as_bytes()).ok()?;
         let pockets = RetroPockets::from_str(pocket_white, pocket_black).ok()?;
+        let ep_square = fen_vec
+            .get(3)
+            .and_then(|sq| Square::from_ascii(sq.as_bytes()).ok());
         // It doesn't make sense to initialize halfmoves from the fen, since doing unmoves.
         Some(RetroBoard {
             board,
             retro_turn,
             pockets,
             halfmoves: 0,
+            ep_square,
         })
     }
 
@@ -229,12 +233,15 @@ impl RetroBoard {
     #[inline]
     fn epd(&self) -> String {
         format!(
-            "{} {}",
+            "{} {} - {}",
             self.board.board_fen(Bitboard::EMPTY),
             match self.retro_turn {
                 Black => "w",
                 White => "b",
-            }
+            },
+            self.ep_square
+                .map(|sq| format! {"{:?}", sq})
+                .unwrap_or("-".to_string())
         )
     }
 
