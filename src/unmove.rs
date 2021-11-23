@@ -239,28 +239,4 @@ mod tests {
             UnMove::from_retro_uci("Ef6e5").unwrap()
         );
     }
-
-    #[test]
-    fn test_hash() {
-        assert_eq!(
-            UnMove::from_retro_uci("a1a8").unwrap().mirror(),
-            UnMove::from_retro_uci("a8a1").unwrap()
-        );
-        assert_eq!(
-            UnMove::from_retro_uci("Qa1a8").unwrap().mirror(),
-            UnMove::from_retro_uci("Qa8a1").unwrap()
-        );
-        assert_eq!(
-            UnMove::from_retro_uci("Ua1a2").unwrap().mirror(),
-            UnMove::from_retro_uci("Ua8a7").unwrap()
-        );
-        assert_eq!(
-            UnMove::from_retro_uci("Ua1b2").unwrap().mirror(),
-            UnMove::from_retro_uci("Ua8b7").unwrap()
-        );
-        assert_eq!(
-            UnMove::from_retro_uci("Ef3e4").unwrap().mirror(),
-            UnMove::from_retro_uci("Ef6e5").unwrap()
-        );
-    }
 }
