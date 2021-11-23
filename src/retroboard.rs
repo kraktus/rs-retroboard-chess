@@ -290,6 +290,29 @@ impl RetroBoard {
         }
     }
 
+    fn gen_en_passant(&self, moves: &mut UnMoveList) {
+        if self.pockets.color(!self.retro_turn).pawn > 0 {
+            // pawns on the relative 6th rank with free space above AND below them
+            let ep_pawns = self.our(Role::Pawn)
+                & Bitboard::relative_rank(self.retro_turn, Rank::Sixth)
+                & (!Bitboard::relative_rank(self.retro_turn, Rank::Fifth))
+                    .relative_shift(self.retro_turn, 8)
+                & (!Bitboard::relative_rank(self.retro_turn, Rank::Seventh))
+                    .relative_shift(!self.retro_turn, 8);
+
+            for from in ep_pawns {
+                for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() {
+                    moves.push(UnMove {
+                        from,
+                        to,
+                        uncapture: Some(Role::Pawn),
+                        special_move: Some(SpecialMove::EnPassant),
+                    });
+                }
+            }
+        }
+    }
+
     fn gen_pawns(&self, moves: &mut UnMoveList) {
         // generate pawn uncaptures
         for from in self.our(Role::Pawn) & !Bitboard::relative_rank(self.retro_turn, Rank::Second) {
@@ -419,6 +442,10 @@ fn closest_further_square(bb: Bitboard, of: Square) -> (Square, Square) {
     } else {
         (sq_2, sq_1)
     }
+}
+
+fn unoccuped_sq_of_rank_then_relative_switch(rank: Bitboard, color: Color, shift: u32) -> Bitboard {
+    !rank.relative_shift(color, shift)
 }
 
 #[cfg(test)]

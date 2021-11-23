@@ -115,6 +115,19 @@ impl UnMove {
     }
 
     #[inline]
+    pub fn uncapture_square(&self) -> Option<Square> {
+        if self.is_uncapture() {
+            Some(if self.is_en_passant() {
+                Square::from_coords(self.from.file(), self.to.rank())
+            } else {
+                self.from
+            })
+        } else {
+            None
+        }
+    }
+
+    #[inline]
     pub fn mirror(&self) -> Self {
         Self {
             from: self.from.flip_vertical(),
