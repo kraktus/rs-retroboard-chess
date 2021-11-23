@@ -139,7 +139,7 @@ impl UnMove {
     }
 
     pub fn uncapture_square(&self) -> Option<Square> {
-        self.uncapture.map(|_| {
+        self.uncapture().map(|_| {
             if self.is_en_passant() {
                 Square::from_coords(self.from.file(), self.to.rank())
             } else {
@@ -237,6 +237,31 @@ mod tests {
         assert_eq!(
             UnMove::from_retro_uci("Ef3e4").unwrap().mirror(),
             UnMove::from_retro_uci("Ef6e5").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_uncapture_square() {
+        assert_eq!(
+            UnMove::from_retro_uci("Ed3e4")
+                .unwrap()
+                .uncapture_square()
+                .unwrap(),
+            Square::D4,
+        );
+        assert_eq!(
+            UnMove::from_retro_uci("Eb6c5")
+                .unwrap()
+                .uncapture_square()
+                .unwrap(),
+            Square::B5,
+        );
+        assert_eq!(
+            UnMove::from_retro_uci("Qa8h1")
+                .unwrap()
+                .uncapture_square()
+                .unwrap(),
+            Square::A8,
         );
     }
 }
