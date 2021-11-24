@@ -88,6 +88,7 @@ impl RetroBoard {
         self.gen_pieces(moves);
         self.gen_unpromotion(moves);
         self.gen_pawns(moves);
+        self.gen_en_passant(moves);
     }
 
     /// Generate legal unmoves, which are all the pseudo legal unmoves which do not put the opponent's king in check.
@@ -285,18 +286,14 @@ impl RetroBoard {
             let ep_pawns = self.our(Role::Pawn)
                 & Bitboard::relative_rank(self.retro_turn, Rank::Sixth)
                 & (!Bitboard::relative_rank(self.retro_turn, Rank::Fifth))
-                    .relative_shift(self.retro_turn, 8)
+                    .relative_shift(!self.retro_turn, 8)
                 & (!Bitboard::relative_rank(self.retro_turn, Rank::Seventh))
-                    .relative_shift(!self.retro_turn, 8);
+                    .relative_shift(self.retro_turn, 8);
 
+            println!("{:?}", ep_pawns);
             for from in ep_pawns {
                 for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() {
-                    moves.push(UnMove::new(
-                        from,
-                        to,
-                        Some(Role::Pawn),
-                        Some(SpecialMove::EnPassant),
-                    ));
+                    moves.push(UnMove::new(from, to, None, Some(SpecialMove::EnPassant)));
                 }
             }
         }
@@ -725,6 +722,7 @@ mod tests {
         unpromotion_but_uncapture_not_possible, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "1", "", "unpromotion", "Ug8g7",
         no_unpromotion, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "", "PQ", "unpromotion", "",
         pseudo_legal, "5BN1/k3n3/5n1n/8/5P2/8/nn6/K7 b - - 0 1", "1", "PQ", "pseudo", "a1b1 Qa1b1 Ug8g7 UQg8f7 UQg8h7 Uf8f7 UQf8g7 Qf8g7 f8g7 f4f2 f4f3 Pf4g3 Pf4e3 Qf4g3 Qf4e3",
+        pseudo_en_passant, "1k6/8/4P3/8/8/8/nn6/Kn6 b - - 0 1", "", "P", "pseudo", "e6e5 Pe6d5 Pe6f5 Ee6d5 Ee6f5",
     }
 
     #[test]
