@@ -85,10 +85,21 @@ impl RetroBoard {
     }
 
     pub fn pseudo_legal_unmoves(&self, moves: &mut UnMoveList) {
-        self.gen_pieces(moves);
-        self.gen_unpromotion(moves);
-        self.gen_pawns(moves);
-        self.gen_en_passant(moves);
+        // then there is only move possible
+        if let Some(sq) = self.ep_square {
+            // ep square always on the third or sixth rank, so offseting is fine
+            moves.push(UnMove::new(
+                sq.offset(self.retro_turn.fold(8, -8)).unwrap(), // from
+                sq.offset(self.retro_turn.fold(-8, 8)).unwrap(), // to
+                None,
+                None,
+            ))
+        } else {
+            self.gen_pieces(moves);
+            self.gen_unpromotion(moves);
+            self.gen_pawns(moves);
+            self.gen_en_passant(moves);
+        }
     }
 
     /// Generate legal unmoves, which are all the pseudo legal unmoves which do not put the opponent's king in check.
