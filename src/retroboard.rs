@@ -240,7 +240,7 @@ impl RetroBoard {
                 White => "b",
             },
             self.ep_square
-                .map(|sq| format! {"{:?}", sq})
+                .map(|sq| format! {"{:?}", sq}.to_ascii_lowercase())
                 .unwrap_or("-".to_string())
         )
     }
@@ -290,7 +290,6 @@ impl RetroBoard {
                 & (!Bitboard::relative_rank(self.retro_turn, Rank::Seventh))
                     .relative_shift(self.retro_turn, 8);
 
-            println!("{:?}", ep_pawns);
             for from in ep_pawns {
                 for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() {
                     moves.push(UnMove::new(from, to, None, Some(SpecialMove::EnPassant)));
@@ -386,7 +385,10 @@ impl fmt::Debug for RetroBoard {
 
 impl From<RetroBoard> for Chess {
     fn from(item: RetroBoard) -> Self {
-        let setup: Fen = item.epd().parse().expect("syntactically correct FEN");
+        let setup: Fen = item
+            .epd()
+            .parse()
+            .expect(&format!("syntactically correct EPD: {:?}", item.epd()));
         setup
             .position(CastlingMode::Standard)
             .expect(&format!("Legal Position: {}", setup))
@@ -723,6 +725,7 @@ mod tests {
         no_unpromotion, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "", "PQ", "unpromotion", "",
         pseudo_legal, "5BN1/k3n3/5n1n/8/5P2/8/nn6/K7 b - - 0 1", "1", "PQ", "pseudo", "a1b1 Qa1b1 Ug8g7 UQg8f7 UQg8h7 Uf8f7 UQf8g7 Qf8g7 f8g7 f4f2 f4f3 Pf4g3 Pf4e3 Qf4g3 Qf4e3",
         pseudo_en_passant, "1k6/8/4P3/8/8/8/nn6/Kn6 b - - 0 1", "", "P", "pseudo", "e6e5 Pe6d5 Pe6f5 Ee6d5 Ee6f5",
+        pseudo_en_passant_only, "1k6/8/8/8/4P3/8/8/K7 b - e3 0 1", "", "P", "pseudo", "e4e2",
     }
 
     #[test]

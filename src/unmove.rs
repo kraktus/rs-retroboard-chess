@@ -33,7 +33,7 @@ impl FromStr for SpecialMove {
 pub struct UnMove {
     pub from: Square,
     pub to: Square,
-    uncapture: Option<Role>,
+    uncapture: Option<Role>, // By convention no uncapture if the move is en-passant (Yes not ideal)
     pub special_move: Option<SpecialMove>,
 }
 
