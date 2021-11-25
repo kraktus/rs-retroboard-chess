@@ -48,7 +48,7 @@ fn main() {
     let depth = 4;
     let leaves = perft(&r, depth);
     println!(
-        "Perft at  depth {}, {} leaves, {:?}s",
+        "Perft at  depth {}, {} leaves, {:?}",
         depth,
         leaves,
         start.elapsed()
