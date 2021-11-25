@@ -154,6 +154,9 @@ impl UnMove {
     /// # Examples
     ///
     /// ```
+    /// use retroboard::UnMove;
+    /// use shakmaty::Square;
+    ///
     /// assert_eq!(
     ///     UnMove::from_retro_uci("Ed3e4")
     ///         .unwrap()
