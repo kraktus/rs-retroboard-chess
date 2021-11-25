@@ -107,8 +107,7 @@ impl UnMove {
                 _ => "".to_owned(),
             },
             self.uncapture
-                .map(|role| role.upper_char().to_string())
-                .unwrap_or_else(|| "".to_owned()),
+                .map_or_else(|| "".to_owned(), |role| role.upper_char().to_string()),
             self.from,
             self.to
         )
