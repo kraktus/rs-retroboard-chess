@@ -567,6 +567,18 @@ mod tests {
     }
 
     #[test]
+    fn test_retro_attacks() {
+        assert_eq!(
+            retro_attacks(Square::E4, Black.pawn(), Bitboard::EMPTY),
+            Bitboard::EMPTY | Square::D5 | Square::F5
+        );
+        assert_eq!(
+            retro_attacks(Square::A1, Black.knight(), Bitboard::EMPTY),
+            Bitboard::EMPTY | Square::B3 | Square::C2
+        );
+    }
+
+    #[test]
     fn test_push_uncapture() {
         for piece in "PNBRQ".chars() {
             let mut r =

@@ -1,3 +1,5 @@
+use shakmaty::perft as shakmaty_perft;
+use shakmaty::Chess;
 use std::time::Instant;
 
 use retroboard::RetroBoard;
@@ -47,10 +49,25 @@ fn main() {
     let start = Instant::now();
     let depth = 4;
     let leaves = perft(&r, depth);
+    let stop = start.elapsed();
+    let pos = Chess::default();
+    let shakmaty_start = Instant::now();
+    let shakmaty_depth = 5;
+    let shakmaty_leaves = shakmaty_perft(&pos, shakmaty_depth);
+    let shakmaty_stop = shakmaty_start.elapsed();
+
     println!(
-        "Perft at  depth {}, {} leaves, {:?}",
+        "Perft at  depth {}, {} leaves, {:?}, ratio {} pos/s",
         depth,
         leaves,
-        start.elapsed()
+        start.elapsed(),
+        leaves as u128 / stop.as_millis() * 1000
+    );
+    println!(
+        "Shakmaty perft at  depth {}, {} leaves, {:?}, ratio {} pos/s",
+        shakmaty_depth,
+        shakmaty_leaves,
+        shakmaty_start.elapsed(),
+        shakmaty_leaves as u128 / shakmaty_stop.as_millis() * 1000
     );
 }
