@@ -55,6 +55,7 @@ impl UnMove {
     /// regex: r"[UE]?[NBRQ]?([abcdefgh][1-8]){2}"
     ///
     /// Note: A unmove being accepted does not means it is for sure legal, just syntaxically correct
+    #[allow(clippy::doc_markdown)]
     pub fn from_retro_uci(retro_uci: &str) -> Result<UnMove, ParseRetroUciError> {
         lazy_static! {
         static ref UNMOVE_REGEX: Regex = Regex::new(r"^(?P<special_move>[UE]?)(?P<uncapture>[PNBRQ]?)(?P<from>([abcdefgh][1-8]))(?P<to>([abcdefgh][1-8]))$").unwrap();
