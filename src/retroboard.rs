@@ -17,8 +17,8 @@ pub struct RetroBoard {
     ep_square: Option<Square>,
 }
 
-/// A `Board` where `Unmove` are played and all legal `Unmove` can be generated, on top of every thing a `Board` can do.
-/// At every time the position must be legal.
+/// A `Board` where `Unmove` are played and all legal `Unmove` can be generated.
+/// At every time the position must be legal. This does include unreachable positions, like [this position](https://lichess.org/editor/3k4/2B1B3/8/8/8/8/5N2/3K4_b_-_-_0_1).
 impl RetroBoard {
     #[must_use]
     pub fn new_no_pockets(fen: &str) -> Option<Self> {

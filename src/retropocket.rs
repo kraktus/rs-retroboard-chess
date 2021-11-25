@@ -9,7 +9,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug)]
 pub struct ParseRetroPocketError;
 
-/// A RetroBoard pocket with a counter for each piece type.
+/// A `RetroBoard` pocket with a counter for each piece type.
 /// It stores the pieces than can be uncaptured by each color.    
 /// `self.unpromotion` is the number of pieces than can unpromote into a pawn.
 /// By default it is set to 0
@@ -31,7 +31,7 @@ impl RetroPocket {
             Role::Bishop => self.bishop -= 1,
             Role::Rook => self.rook -= 1,
             Role::Queen => self.queen -= 1,
-            _ => panic!("Cannot uncapture king"),
+            Role::King => panic!("Cannot uncapture king"),
         }
     }
 }
@@ -68,6 +68,7 @@ impl fmt::Debug for RetroPocket {
 impl FromStr for RetroPocket {
     type Err = ParseRetroPocketError;
 
+    #[allow(clippy::cast_possible_truncation)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut pawn: u8 = 0;
         let mut knight: u8 = 0;
