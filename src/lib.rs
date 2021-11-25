@@ -1,5 +1,5 @@
-#![warn(clippy::pedantic)]
-#![warn(clippy::cargo)]
+//#![warn(clippy::pedantic)]
+//#![warn(clippy::cargo)]
 
 mod unmove;
 pub use crate::unmove::{SpecialMove, UnMove, UnMoveList};
