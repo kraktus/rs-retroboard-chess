@@ -215,22 +215,27 @@ impl RetroBoard {
     }
 
     #[inline]
-    fn us(&self) -> Bitboard {
+    pub fn board(&self) -> &Board {
+        &self.board
+    }
+
+    #[inline]
+    pub fn us(&self) -> Bitboard {
         self.board.by_color(self.retro_turn)
     }
 
     #[inline]
-    fn our(&self, role: Role) -> Bitboard {
+    pub fn our(&self, role: Role) -> Bitboard {
         self.us() & self.board.by_role(role)
     }
 
     #[inline]
-    fn them(&self) -> Bitboard {
+    pub fn them(&self) -> Bitboard {
         self.board.by_color(!self.retro_turn)
     }
 
     #[inline]
-    fn their(&self, role: Role) -> Bitboard {
+    pub fn their(&self, role: Role) -> Bitboard {
         self.them() & self.board.by_role(role)
     }
 
@@ -456,10 +461,6 @@ fn closest_further_square(bb: Bitboard, of: Square) -> (Square, Square) {
     } else {
         (sq_2, sq_1)
     }
-}
-
-fn unoccuped_sq_of_rank_then_relative_switch(rank: Bitboard, color: Color, shift: u32) -> Bitboard {
-    !rank.relative_shift(color, shift)
 }
 
 #[cfg(test)]
