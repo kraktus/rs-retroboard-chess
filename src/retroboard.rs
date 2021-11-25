@@ -498,6 +498,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::non_ascii_literal)]
     fn test_debug() {
         let r = RetroBoard::new(
             "kqrbn2k/5p2/8/8/8/8/5P2/KQRBN3 w - - 0 1",
