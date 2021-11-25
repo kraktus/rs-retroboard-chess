@@ -529,7 +529,7 @@ mod tests {
             Board::from_board_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR".as_bytes())
                 .unwrap()
         );
-        assert_eq!(r.pockets, RetroPockets::new());
+        assert_eq!(r.pockets, RetroPockets::default());
         assert_eq!(r.halfmoves, 0);
     }
 

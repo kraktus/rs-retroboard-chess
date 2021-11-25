@@ -24,17 +24,6 @@ pub struct RetroPocket {
 }
 
 impl RetroPocket {
-    pub fn new() -> Self {
-        RetroPocket {
-            pawn: 0,
-            knight: 0,
-            bishop: 0,
-            rook: 0,
-            queen: 0,
-            unpromotion: 0,
-        }
-    }
-
     pub fn decr(&mut self, role: Role) {
         match role {
             Role::Pawn => self.pawn -= 1,
@@ -43,6 +32,20 @@ impl RetroPocket {
             Role::Rook => self.rook -= 1,
             Role::Queen => self.queen -= 1,
             _ => panic!("Cannot uncapture king"),
+        }
+    }
+}
+
+/// Empty pocket
+impl Default for RetroPocket {
+    fn default() -> Self {
+        Self {
+            pawn: 0,
+            knight: 0,
+            bishop: 0,
+            rook: 0,
+            queen: 0,
+            unpromotion: 0,
         }
     }
 }
@@ -132,6 +135,7 @@ impl IntoIterator for RetroPocket {
     }
 }
 
+/// Wrapper around [`RetroPocket`] that provide handful functions to access them by color
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
 pub struct RetroPockets {
     // TODO check if worth switching to `ByColor`
@@ -153,18 +157,21 @@ impl RetroPockets {
         }
     }
 
-    pub fn new() -> Self {
-        Self {
-            white: RetroPocket::new(),
-            black: RetroPocket::new(),
-        }
-    }
-
     pub fn from_str(white: &str, black: &str) -> Result<Self, ParseRetroPocketError> {
         Ok(Self {
             white: RetroPocket::from_str(white)?,
             black: RetroPocket::from_str(black)?,
         })
+    }
+}
+
+/// Empty pocket for each side
+impl Default for RetroPockets {
+    fn default() -> Self {
+        Self {
+            white: RetroPocket::default(),
+            black: RetroPocket::default(),
+        }
     }
 }
 
@@ -191,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_retropocket_fromstr() {
-        let r = RetroPocket::new();
+        let r = RetroPocket::default();
         check_pocket(r, 0, 0, 0, 0, 0, 0);
         let r2 = RetroPocket::from_str("PNBRQ").unwrap();
         check_pocket(r2, 1, 1, 1, 1, 1, 0);
@@ -208,7 +215,7 @@ mod tests {
             RetroPocket::from_str("PQP").unwrap(),
             RetroPocket::from_str("PPQ").unwrap()
         );
-        assert_eq!(RetroPocket::new(), RetroPocket::new());
+        assert_eq!(RetroPocket::default(), RetroPocket::default());
         assert_ne!(
             RetroPocket::from_str("2NBRQ").unwrap(),
             RetroPocket::from_str("NBRQ6").unwrap()
