@@ -4,10 +4,11 @@ use shakmaty::{
     Rank, Role, Square,
 };
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 use crate::{RetroPockets, SpecialMove, UnMove, UnMoveList};
 
-#[derive(Hash, Clone)] // Copy?
+#[derive(Clone)] // Copy?
 pub struct RetroBoard {
     board: Board,
     retro_turn: Color,
@@ -390,6 +391,15 @@ impl PartialEq for RetroBoard {
     }
 }
 
+impl Hash for RetroBoard {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.retro_turn.hash(state);
+        self.board.hash(state);
+        self.pockets.hash(state);
+        self.ep_square.hash(state);
+    }
+}
+
 impl Eq for RetroBoard {}
 
 impl fmt::Debug for RetroBoard {
@@ -468,7 +478,7 @@ mod tests {
     use super::*;
     use indoc::indoc;
     use paste::paste;
-    use shakmaty::{uci::Uci, Position, Setup};
+    use shakmaty::{uci::Uci, Position};
     // use pretty_assertions::{assert_eq, assert_ne};
     use std::collections::HashSet;
 
@@ -521,13 +531,22 @@ mod tests {
     }
 
     #[test]
-    fn test_push_simple() {
-        let mut r = RetroBoard::new_no_pockets("k7/6P1/8/8/8/8/8/3K4 b - - 0 1").unwrap();
-        r.push(u("d1e2"));
-        assert_eq!(
-            r,
-            RetroBoard::new_no_pockets("k7/6P1/8/8/8/8/4K3/8 w - - 0 1").unwrap()
-        )
+    fn test_hash() {
+        let mut r =
+            RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1")
+                .unwrap();
+        r.push(u("g1f3"));
+        r.push(u("g8f6"));
+        r.push(u("f3g1"));
+        r.push(u("f6g8"));
+        let mut hashset: HashSet<RetroBoard> = HashSet::new();
+        hashset.insert(r.clone());
+        let r2 =
+            RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1")
+                .unwrap();
+        assert_ne!(r.halfmoves, r2.halfmoves);
+        assert_eq!(r, r2);
+        assert!(hashset.contains(&r2))
     }
 
     #[test]
