@@ -52,7 +52,7 @@ fn main() {
     let stop = start.elapsed();
     let pos = Chess::default();
     let shakmaty_start = Instant::now();
-    let shakmaty_depth = 5;
+    let shakmaty_depth = 6;
     let shakmaty_leaves = shakmaty_perft(&pos, shakmaty_depth);
     let shakmaty_stop = shakmaty_start.elapsed();
 
