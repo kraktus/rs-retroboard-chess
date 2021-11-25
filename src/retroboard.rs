@@ -1,7 +1,7 @@
 use shakmaty::Piece;
 use shakmaty::{
-    attacks, fen::Fen, Bitboard, Board, CastlingMode, Chess, Color, Color::Black, Color::White,
-    Rank, Role, Square,
+    attacks, fen::Fen, fen::ParseFenError, Bitboard, Board, CastlingMode, Chess, Color,
+    Color::Black, Color::White, Rank, Role, Square,
 };
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -440,6 +440,27 @@ impl From<RetroBoard> for Chess {
     }
 }
 
+// impl TryFrom<RetroBoard> for Chess {
+//     type Error = ParseFenError;
+
+//     fn try_from(item: RetroBoard) -> Result<Self, Self::Error> {
+//         let setup: Fen = item
+//              .epd()
+//              .parse()
+//              .map_or_else(|_| Err(format!("syntactically correct EPD: {:?}", item.epd())), |setup| setup.position(CastlingMode::Standard))
+
+//     }
+// }
+
+/// DEBUG
+fn try_from(item: RetroBoard) -> Option<Chess> {
+    let setup: Fen = item.epd().parse().ok()?;
+    match setup.position(CastlingMode::Standard) {
+        Err(x) => x.ignore_impossible_check().ok(),
+        ok => ok.ok(),
+    }
+}
+
 #[inline]
 fn unicode(c: char) -> char {
     match c {
@@ -863,7 +884,7 @@ mod tests {
             let fen = "q4N2/1p5k/8/8/6P1/4Q3/1K1PB3/7r b - - 0 1";
             let white_p = "2PNBRQ";
             let black_p = "3NBRQP";
-            let mut counter: u32 = 0;
+            let mut counter: u64 = 0;
             let r = if mirrored {
                 RetroBoard::new(&mirror_fen(fen), black_p, white_p)
                     .expect("Valid mirrored retroboard")
@@ -886,6 +907,59 @@ mod tests {
                 }
             }
             assert_eq!(counter, 3975)
+        }
+    }
+
+    fn perft_debug(r: RetroBoard, depth: u32) -> Option<u64> {
+        if depth < 1 {
+            Some(1)
+        } else {
+            try_from(r.clone())?; // check if position is legal
+            let mut acc: u64 = 0;
+            for m in r.legal_unmoves() {
+                let mut r2 = r.clone();
+                r2.push(&m);
+                let chess_after_unmove: Chess = match try_from(r2.clone()) {
+                    None => {
+                        println!(
+                            "depth {}, Illegal pos {:?}, move leading to it {:?}",
+                            depth, r2, m
+                        );
+                        return None;
+                    }
+                    Some(pos) => pos,
+                };
+                assert!(move_legal(&r, chess_after_unmove, m.clone()));
+                match perft_debug(r2.clone(), depth - 1) {
+                    None => {
+                        println!(
+                            "depth {}, Illegal pos {:?}, move leading to it {:?}",
+                            depth, r2, m
+                        );
+                        return None;
+                    }
+                    Some(x) => acc += x,
+                };
+            }
+            Some(acc)
+        }
+    }
+
+    #[test]
+    fn test_perft_debug() {
+        for mirrored in [false, true] {
+            let fen = "q4N2/1p5k/8/8/6P1/4Q3/1K1PB3/7r b - - 0 1";
+            let white_p = "2PNBRQ";
+            let black_p = "3NBRQP";
+            let mut counter: u64 = 0;
+            let r = if mirrored {
+                RetroBoard::new(&mirror_fen(fen), black_p, white_p)
+                    .expect("Valid mirrored retroboard")
+            } else {
+                RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard")
+            };
+            assert_eq!(perft_debug(r.clone(), 0), Some(1));
+            assert_eq!(perft_debug(r, 3), Some(640054))
         }
     }
 }
