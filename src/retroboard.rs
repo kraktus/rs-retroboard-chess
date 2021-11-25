@@ -1,7 +1,7 @@
 use shakmaty::Piece;
 use shakmaty::{
-    attacks, fen::Fen, fen::ParseFenError, Bitboard, Board, CastlingMode, Chess, Color,
-    Color::Black, Color::White, Rank, Role, Square,
+    attacks, fen::Fen, Bitboard, Board, CastlingMode, Chess, Color, Color::Black, Color::White,
+    Rank, Role, Square,
 };
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -441,15 +441,6 @@ impl From<RetroBoard> for Chess {
                 .unwrap_or_else(|_| panic!("Legal Position: {}", setup)),
             Ok(pos) => pos,
         }
-    }
-}
-
-/// DEBUG
-fn try_from(item: RetroBoard) -> Option<Chess> {
-    let setup: Fen = item.epd().parse().ok()?;
-    match setup.position(CastlingMode::Standard) {
-        Err(x) => x.ignore_impossible_check().ok(),
-        ok => ok.ok(),
     }
 }
 
@@ -902,6 +893,14 @@ mod tests {
         }
     }
 
+    fn try_from(item: RetroBoard) -> Option<Chess> {
+        let setup: Fen = item.epd().parse().ok()?;
+        match setup.position(CastlingMode::Standard) {
+            Err(x) => x.ignore_impossible_check().ok(),
+            ok => ok.ok(),
+        }
+    }
+
     fn perft_debug(r: RetroBoard, depth: u32) -> Option<u64> {
         if depth < 1 {
             Some(1)
@@ -943,7 +942,6 @@ mod tests {
             let fen = "q4N2/1p5k/8/8/6P1/4Q3/1K1PB3/7r b - - 0 1";
             let white_p = "2PNBRQ";
             let black_p = "3NBRQP";
-            let mut counter: u64 = 0;
             let r = if mirrored {
                 RetroBoard::new(&mirror_fen(fen), black_p, white_p)
                     .expect("Valid mirrored retroboard")
