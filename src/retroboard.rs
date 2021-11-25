@@ -20,10 +20,12 @@ pub struct RetroBoard {
 /// A `Board` where `Unmove` are played and all legal `Unmove` can be generated, on top of every thing a `Board` can do.
 /// At every time the position must be legal.
 impl RetroBoard {
+    #[must_use]
     pub fn new_no_pockets(fen: &str) -> Option<Self> {
         Self::new(fen, "", "")
     }
 
+    #[must_use]
     pub fn new(fen: &str, pocket_white: &str, pocket_black: &str) -> Option<Self> {
         let fen_vec: Vec<&str> = fen.split(' ').collect();
         let retro_turn = match *fen_vec.get(1).unwrap_or(&"w") {
@@ -105,6 +107,7 @@ impl RetroBoard {
 
     /// Generate legal unmoves, which are all the pseudo legal unmoves which do not put the opponent's king in check.
     /// If the opponent's king is in check at the beginning of our turn, the only legal unmoves are those which stop it from being in check.
+    #[must_use]
     pub fn legal_unmoves(&self) -> UnMoveList {
         // supposing the opponent's king is not in check at the beginning of our retro_turn
         let mut moves: UnMoveList = UnMoveList::new();
@@ -218,26 +221,31 @@ impl RetroBoard {
     }
 
     #[inline]
+    #[must_use]
     pub fn board(&self) -> &Board {
         &self.board
     }
 
     #[inline]
+    #[must_use]
     pub fn us(&self) -> Bitboard {
         self.board.by_color(self.retro_turn)
     }
 
     #[inline]
+    #[must_use]
     pub fn our(&self, role: Role) -> Bitboard {
         self.us() & self.board.by_role(role)
     }
 
     #[inline]
+    #[must_use]
     pub fn them(&self) -> Bitboard {
         self.board.by_color(!self.retro_turn)
     }
 
     #[inline]
+    #[must_use]
     pub fn their(&self, role: Role) -> Bitboard {
         self.them() & self.board.by_role(role)
     }

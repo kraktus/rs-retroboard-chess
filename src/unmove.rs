@@ -82,6 +82,7 @@ impl UnMove {
     }
 
     #[inline]
+    #[must_use]
     pub fn new(
         from: Square,
         to: Square,
@@ -96,6 +97,7 @@ impl UnMove {
         }
     }
 
+    #[must_use]
     pub fn to_retro_uci(&self) -> String {
         format!(
             "{}{}{}{}",
@@ -113,11 +115,13 @@ impl UnMove {
     }
 
     #[inline]
+    #[must_use]
     pub fn is_uncapture(&self) -> bool {
         self.uncapture.is_some()
     }
 
     #[inline]
+    #[must_use]
     pub fn uncapture(&self) -> Option<Role> {
         if self.is_en_passant() {
             Some(Role::Pawn)
@@ -127,17 +131,20 @@ impl UnMove {
     }
 
     #[inline]
+    #[must_use]
     pub fn is_unpromotion(&self) -> bool {
         self.special_move
             .map_or(false, |x| x == SpecialMove::UnPromotion)
     }
 
     #[inline]
+    #[must_use]
     pub fn is_en_passant(&self) -> bool {
         self.special_move
             .map_or(false, |x| x == SpecialMove::EnPassant)
     }
 
+    #[must_use]
     pub fn uncapture_square(&self) -> Option<Square> {
         self.uncapture().map(|_| {
             if self.is_en_passant() {
@@ -149,6 +156,7 @@ impl UnMove {
     }
 
     #[inline]
+    #[must_use]
     pub fn mirror(&self) -> Self {
         Self {
             from: self.from.flip_vertical(),

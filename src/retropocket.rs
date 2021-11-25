@@ -144,6 +144,7 @@ pub struct RetroPockets {
 }
 
 impl RetroPockets {
+    #[must_use]
     pub fn color(&self, c: Color) -> &RetroPocket {
         match c {
             White => &self.white,
