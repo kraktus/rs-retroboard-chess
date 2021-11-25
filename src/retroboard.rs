@@ -130,9 +130,8 @@ impl RetroBoard {
                 let from_piece = self.board.piece_at(from).unwrap();
                 let target = attacks::between(self.king_of(!self.retro_turn), furthest_checker);
                 // the closest piece must come into the way of the further one
-                if let Some(to) = (dbg! {retro_attacks(from, from_piece, self.occupied())}
-                    & dbg! {target})
-                .first()
+                if let Some(to) =
+                    (retro_attacks(from, from_piece, self.occupied()) & target).first()
                 {
                     if from_piece.role != Role::Pawn {
                         moves.push(UnMove::new(from, to, None, None));
