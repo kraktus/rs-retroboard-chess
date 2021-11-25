@@ -9,7 +9,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug)]
 pub struct ParseRetroPocketError;
 
-/// A `RetroBoard` pocket with a counter for each piece type.
+/// A [`crate::RetroBoard`] pocket with a counter for each piece type.
 /// It stores the pieces than can be uncaptured by each color.    
 /// `self.unpromotion` is the number of pieces than can unpromote into a pawn.
 /// By default it is set to 0
@@ -36,8 +36,8 @@ impl RetroPocket {
     }
 }
 
-/// Empty pocket
 impl Default for RetroPocket {
+    /// Empty pocket
     fn default() -> Self {
         Self {
             pawn: 0,

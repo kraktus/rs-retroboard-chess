@@ -40,19 +40,22 @@ pub struct UnMove {
 impl UnMove {
     /// movements are represented with uci, but for uncapture and unpromote
     /// a special syntax is used:
+    ///
     /// -Uncapture: the piece left at the source square is indicated at the beginning, follow by normal uci move.
     /// e.g: "Re2e4" the piece on e2 goes on e4 and leaves a Rook from the opposite color on e2.
+    ///
     /// -Unpromotion: "U" and after the square from which the piece will underpromote and the
     /// source square must be on the 8th or 1st rank, and dest square must be on first or second rank.
     /// e.g: "Ue8e7".
     /// An unpromotion can also be an uncapture, in this case it's noted "<PieceType>U<from_square><to_square>"
     /// e.g "UNe8e7"
+    ///
     /// -En passant: "E" then the source square of the pawn and the destination of it.
     /// When a move is en-passsant, it cannot Uncapture anything (since the pawn uncapture is already implied)
     /// e.g "Ed6e5". Note than it's different than "Pd6e5". In the first example, the uncaptured pawn is in `d5`,
     /// while in the second one it's in `d6`.
     ///
-    /// regex: r"[UE]?[NBRQ]?([abcdefgh][1-8]){2}"
+    /// regex: r"\[UE\]?\[NBRQ\]?(\[abcdefgh\]\[1-8\]){2}"
     ///
     /// Note: A unmove being accepted does not means it is for sure legal, just syntaxically correct
     #[allow(clippy::doc_markdown)]
@@ -82,6 +85,7 @@ impl UnMove {
             .ok_or(ParseRetroUciError)
     }
 
+    /// Retuns a new [`UnMove`]. By convention if it is en-passant, uncapture field should be set to `None`.
     #[inline]
     #[must_use]
     pub fn new(
@@ -98,6 +102,7 @@ impl UnMove {
         }
     }
 
+    /// Returns a string following the retro uci standard. See [`UnMove::from_retro_uci`] for more information.
     #[must_use]
     pub fn to_retro_uci(&self) -> String {
         format!(
@@ -144,6 +149,26 @@ impl UnMove {
             .map_or(false, |x| x == SpecialMove::EnPassant)
     }
 
+    /// If the move is an uncapture moves, returns the square when the piece uncaptured will land.
+    /// It is always the `from` square, except for en-passant move.
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(
+    ///     UnMove::from_retro_uci("Ed3e4")
+    ///         .unwrap()
+    ///         .uncapture_square()
+    ///         .unwrap(),
+    ///     Square::D4,
+    /// );
+    /// assert_eq!(
+    ///     UnMove::from_retro_uci("Qa8h1")
+    ///         .unwrap()
+    ///         .uncapture_square()
+    ///         .unwrap(),
+    ///     Square::A8,
+    /// );
+    /// ```
     #[must_use]
     pub fn uncapture_square(&self) -> Option<Square> {
         self.uncapture().map(|_| {
