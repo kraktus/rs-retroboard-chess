@@ -6,6 +6,8 @@ use shakmaty::{
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
+use std::cmp::Ordering;
+
 use crate::{RetroPockets, SpecialMove, UnMove, UnMoveList};
 
 #[derive(Clone)] // Copy?
@@ -114,9 +116,9 @@ impl RetroBoard {
         let checkers = self.checkers(!self.retro_turn);
         let blockers = self.slider_blockers(self.us(), self.king_of(!self.retro_turn));
         let nb_checkers = checkers.count();
-        match nb_checkers {
-            x if x > 2 => return moves, // no unmoves possible
-            2 => {
+        match nb_checkers.cmp(&2) {
+            Ordering::Greater => return moves, // no unmoves possible
+            Ordering::Equal => {
                 if checkers.is_subset(self.board.steppers()) {
                     return moves;
                 };
@@ -144,7 +146,7 @@ impl RetroBoard {
                     moves.retain(|m| !self.does_unmove_give_check(m));
                 }
             }
-            _ => {
+            Ordering::Less => {
                 // 1 or no checker.
                 self.pseudo_legal_unmoves(&mut moves);
                 moves.retain(|m| self.is_safe(m, blockers, checkers.first()));
