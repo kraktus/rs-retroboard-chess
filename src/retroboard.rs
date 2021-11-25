@@ -49,7 +49,7 @@ impl RetroBoard {
         })
     }
 
-    pub fn push(&mut self, m: UnMove) {
+    pub fn push(&mut self, m: &UnMove) {
         let moved_piece = self
             .board
             .remove_piece_at(m.from)
@@ -547,10 +547,10 @@ mod tests {
         let mut r =
             RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1")
                 .unwrap();
-        r.push(u("g1f3"));
-        r.push(u("g8f6"));
-        r.push(u("f3g1"));
-        r.push(u("f6g8"));
+        r.push(&u("g1f3"));
+        r.push(&u("g8f6"));
+        r.push(&u("f3g1"));
+        r.push(&u("f6g8"));
         let mut hashset: HashSet<RetroBoard> = HashSet::new();
         hashset.insert(r.clone());
         let r2 =
@@ -566,7 +566,7 @@ mod tests {
         for piece in "PNBRQ".chars() {
             let mut r =
                 RetroBoard::new("4k3/r7/8/8/8/8/8/4K3 w - - 0 1", &piece.to_string(), "").unwrap();
-            r.push(u(&format!("{}a7a2", piece)));
+            r.push(&u(&format!("{}a7a2", piece)));
             assert_eq!(
                 r,
                 RetroBoard::new_no_pockets(&format!("4k3/{}7/8/8/8/8/r7/4K3 b - - 0 1", piece))
@@ -580,7 +580,7 @@ mod tests {
         for i in 1..9 {
             let mut r =
                 RetroBoard::new("1R6/7k/8/8/8/8/8/1K6 b - - 0 1", &i.to_string(), "").unwrap();
-            r.push(u("Ub8b7"));
+            r.push(&u("Ub8b7"));
             assert_eq!(
                 r,
                 RetroBoard::new("8/1P5k/8/8/8/8/8/1K6 w - - 0 1", &(i - 1).to_string(), "")
@@ -592,7 +592,7 @@ mod tests {
     #[test]
     fn test_push_en_passant() {
         let mut r = RetroBoard::new("k7/8/2P5/8/8/8/8/2K5 b - - 0 1", "", "P").unwrap();
-        r.push(u("Ec6d5"));
+        r.push(&u("Ec6d5"));
         assert_eq!(
             r,
             RetroBoard::new("k7/8/8/2pP4/8/8/8/2K5 w - c6 0 1", "", "").unwrap()
@@ -604,7 +604,7 @@ mod tests {
         for piece in "NBRQ".chars() {
             let mut r =
                 RetroBoard::new("r3k3/8/8/8/8/8/8/4K3 w - - 0 1", &piece.to_string(), "1").unwrap();
-            r.push(u(&format!("U{}a8b7", piece)));
+            r.push(&u(&format!("U{}a8b7", piece)));
             assert_eq!(
                 r,
                 RetroBoard::new_no_pockets(&format!("{}3k3/1p6/8/8/8/8/8/4K3 b - - 0 2", piece))
@@ -733,7 +733,7 @@ mod tests {
             for x in m2.clone() {
                 if gen_type == "legal" {
                     let mut r_after_unmove = r.clone();
-                    r_after_unmove.push(x.clone());
+                    r_after_unmove.push(&x);
                     let chess_after_unmove: Chess = r_after_unmove.into();
                     assert!(move_legal(&r, chess_after_unmove, x));
                 }
@@ -810,7 +810,7 @@ mod tests {
             for m in unmove_list_1 {
                 counter += 1;
                 let mut r2 = r.clone();
-                r2.push(m);
+                r2.push(&m);
                 let mut unmove_list_2 = UnMoveList::new();
                 r2.pseudo_legal_unmoves(&mut unmove_list_2);
                 for _ in unmove_list_2 {
@@ -872,13 +872,13 @@ mod tests {
             for m in r.legal_unmoves() {
                 counter += 1;
                 let mut r2 = r.clone();
-                r2.push(m.clone());
+                r2.push(&m);
                 let chess_after_unmove: Chess = r2.clone().into();
                 assert!(move_legal(&r, chess_after_unmove, m));
                 for m2 in r2.legal_unmoves() {
                     counter += 1;
                     let mut r3 = r2.clone();
-                    r3.push(m2.clone());
+                    r3.push(&m2);
                     let chess_after_unmove2: Chess = r3.clone().into();
                     assert!(move_legal(&r2, chess_after_unmove2, m2));
                 }
