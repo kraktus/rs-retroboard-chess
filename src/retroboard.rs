@@ -901,6 +901,7 @@ mod tests {
         }
     }
 
+    // does not take into account internal positions, contrary to `test_final_unmoves`
     fn perft_debug(r: RetroBoard, depth: u32) -> Option<u64> {
         if depth < 1 {
             Some(1)
@@ -949,6 +950,8 @@ mod tests {
                 RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard")
             };
             assert_eq!(perft_debug(r.clone(), 0), Some(1));
+            assert_eq!(perft_debug(r.clone(), 1), Some(24));
+            assert_eq!(perft_debug(r.clone(), 2), Some(3951));
             // assert_eq!(perft_debug(r, 3), Some(640054))
         }
     }
