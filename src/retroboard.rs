@@ -111,39 +111,41 @@ impl RetroBoard {
         let checkers = self.checkers(!self.retro_turn);
         let blockers = self.slider_blockers(self.us(), self.king_of(!self.retro_turn));
         let nb_checkers = checkers.count();
-        if nb_checkers > 2 {
-            // no unmoves possible
-            return moves;
-        } else if nb_checkers == 2 {
-            if checkers.is_subset(self.board.steppers()) {
-                return moves;
-            };
-
-            // should work if two sliders or one slider one stepper. If there is one stepper, the slider should be the furthest piece.
-            let (from, furthest_checker) =
-                closest_further_square(checkers, self.king_of(!self.retro_turn));
-
-            let from_piece = self.board.piece_at(from).unwrap();
-            let target = attacks::between(self.king_of(!self.retro_turn), furthest_checker);
-            // the closest piece must come into the way of the further one
-            if let Some(to) =
-                (dbg! {retro_attacks(from, from_piece, self.occupied())} & dbg! {target}).first()
-            {
-                if from_piece.role != Role::Pawn {
-                    moves.push(UnMove::new(from, to, None, None));
-                }
-                self.gen_en_passant(&mut moves, target);
-                self.gen_uncaptures(from, to, false, &mut moves);
-                if Bitboard::BACKRANKS.contains(from) {
-                    self.gen_uncaptures(from, to, true, &mut moves);
+        match nb_checkers {
+            x if x > 2 => return moves, // no unmoves possible
+            2 => {
+                if checkers.is_subset(self.board.steppers()) {
+                    return moves;
                 };
-                // we do not check if the move itself gives check before
-                moves.retain(|m| !self.does_unmove_give_check(m));
+
+                // should work if two sliders or one slider one stepper. If there is one stepper, the slider should be the furthest piece.
+                let (from, furthest_checker) =
+                    closest_further_square(checkers, self.king_of(!self.retro_turn));
+
+                let from_piece = self.board.piece_at(from).unwrap();
+                let target = attacks::between(self.king_of(!self.retro_turn), furthest_checker);
+                // the closest piece must come into the way of the further one
+                if let Some(to) = (dbg! {retro_attacks(from, from_piece, self.occupied())}
+                    & dbg! {target})
+                .first()
+                {
+                    if from_piece.role != Role::Pawn {
+                        moves.push(UnMove::new(from, to, None, None));
+                    }
+                    self.gen_en_passant(&mut moves, target);
+                    self.gen_uncaptures(from, to, false, &mut moves);
+                    if Bitboard::BACKRANKS.contains(from) {
+                        self.gen_uncaptures(from, to, true, &mut moves);
+                    };
+                    // we do not check if the move itself gives check before
+                    moves.retain(|m| !self.does_unmove_give_check(m));
+                }
             }
-        } else {
-            // 1 or no checker.
-            self.pseudo_legal_unmoves(&mut moves);
-            moves.retain(|m| self.is_safe(m, blockers, checkers.first()));
+            _ => {
+                // 1 or no checker.
+                self.pseudo_legal_unmoves(&mut moves);
+                moves.retain(|m| self.is_safe(m, blockers, checkers.first()));
+            }
         }
 
         moves
@@ -259,9 +261,10 @@ impl RetroBoard {
                 Black => "w",
                 White => "b",
             },
-            self.ep_square
-                .map(|sq| format! {"{:?}", sq}.to_ascii_lowercase())
-                .unwrap_or("-".to_string())
+            self.ep_square.map_or_else(
+                || "-".to_string(),
+                |sq| format! {"{:?}", sq}.to_ascii_lowercase()
+            )
         )
     }
 
