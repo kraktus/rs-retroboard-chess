@@ -376,6 +376,7 @@ impl RetroBoard {
 }
 
 impl PartialEq for RetroBoard {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.retro_turn == other.retro_turn
             && self.board == other.board
@@ -411,6 +412,7 @@ impl From<RetroBoard> for Chess {
     }
 }
 
+#[inline]
 fn unicode(c: char) -> char {
     match c {
         'R' => '♖',
@@ -429,21 +431,24 @@ fn unicode(c: char) -> char {
     }
 }
 
+#[inline]
 fn retro_attacks(from: Square, p: Piece, occupied: Bitboard) -> Bitboard {
     match p {
         Piece {
-            color: color,
+            color,
             role: Role::Pawn,
         } => attacks::attacks(from, (!color).pawn(), occupied),
         _ => attacks::attacks(from, p, occupied),
     }
 }
 
+#[inline]
 fn show_board(board: &Board) -> String {
     let board_unicode: String = format!("{:?}", board).chars().map(unicode).collect();
     board_unicode
 }
 
+#[inline]
 fn closest_further_square(bb: Bitboard, of: Square) -> (Square, Square) {
     let (sq_1, sq_2) = (bb.first().unwrap(), bb.last().unwrap());
     if sq_1.distance(of) < sq_2.distance(of) {
