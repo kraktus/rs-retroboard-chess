@@ -183,7 +183,7 @@ impl RetroBoard {
         }
 
         // no checker we can end here
-        if !checker.is_some() {
+        if checker.is_none() {
             return true;
         }
 
@@ -283,7 +283,7 @@ impl RetroBoard {
         let to = from
             .offset(self.retro_turn.fold(-8, 8))
             .expect("We're in the eighth rank and going back so square exists");
-        if !self.board.piece_at(to).is_some() {
+        if self.board.piece_at(to).is_none() {
             moves.push(UnMove::new(from, to, None, Some(SpecialMove::UnPromotion)));
         };
         self.gen_pawn_uncaptures(from, true, moves);
@@ -420,10 +420,10 @@ impl From<RetroBoard> for Chess {
         let setup: Fen = item
             .epd()
             .parse()
-            .expect(&format!("syntactically correct EPD: {:?}", item.epd()));
+            .unwrap_or_else(|_| panic!("syntactically correct EPD: {:?}", item.epd()));
         setup
             .position(CastlingMode::Standard)
-            .expect(&format!("Legal Position: {}", setup))
+            .unwrap_or_else(|_| panic!("Legal Position: {}", setup))
     }
 }
 
