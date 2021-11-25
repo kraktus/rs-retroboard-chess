@@ -296,10 +296,10 @@ impl RetroBoard {
             // pawns on the relative 6th rank with free space above AND below them
             let ep_pawns = self.our(Role::Pawn)
                 & Bitboard::relative_rank(self.retro_turn, Rank::Sixth)
-                & (!Bitboard::relative_rank(self.retro_turn, Rank::Fifth))
-                    .relative_shift(!self.retro_turn, 8)
-                & (!Bitboard::relative_rank(self.retro_turn, Rank::Seventh))
-                    .relative_shift(self.retro_turn, 8);
+                & (!(Bitboard::relative_rank(self.retro_turn, Rank::Fifth) & self.occupied()))
+                    .relative_shift(self.retro_turn, 8)
+                & (!(Bitboard::relative_rank(self.retro_turn, Rank::Seventh) & self.occupied()))
+                    .relative_shift(!self.retro_turn, 8);
 
             for from in ep_pawns {
                 for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() {
@@ -736,7 +736,8 @@ mod tests {
         no_unpromotion, "6N1/k3n3/5n1n/8/8/8/nn6/Kn6 b - - 0 1", "", "PQ", "unpromotion", "",
         pseudo_legal, "5BN1/k3n3/5n1n/8/5P2/8/nn6/K7 b - - 0 1", "1", "PQ", "pseudo", "a1b1 Qa1b1 Ug8g7 UQg8f7 UQg8h7 Uf8f7 UQf8g7 Qf8g7 f8g7 f4f2 f4f3 Pf4g3 Pf4e3 Qf4g3 Qf4e3",
         pseudo_en_passant, "1k6/8/4P3/8/8/8/nn6/Kn6 b - - 0 1", "", "P", "pseudo", "e6e5 Pe6d5 Pe6f5 Ee6d5 Ee6f5",
-        pseudo_en_passant_only, "1k6/8/8/8/4P3/8/8/K7 b - e3 0 1", "", "P", "pseudo", "e4e2",
+        pseudo_pre_en_passant_only, "1k6/8/8/8/4P3/8/8/K7 b - e3 0 1", "", "P", "pseudo", "e4e2",
+        no_en_passant_sq_blocked, "4k1b1/8/4P3/4p3/8/n7/Kn6/nn6 b - - 0 1","", "P", "pseudo", "Pe6d5 Pe6f5 a2b3 Pa2b3",
     }
 
     #[test]
@@ -794,7 +795,9 @@ mod tests {
         unpromotion_uncapture, "3kR3/8/8/8/8/8/8/3K4 b - - 0 1", "1", "N","legal", "Ne8e7 Ne8e6 Ne8e5 Ne8e4 Ne8e3 Ne8e2 Ne8e1 UNe8d7 UNe8f7 Ne8f8 Ne8g8 Ne8h8 e8e1 e8e6 e8e2 e8e5 e8e7 e8e3 e8e4",
         double_check_with_uncaptures, "3k4/8/8/3R4/7B/8/8/4K3 b - - 0 1","", "PNBRQ", "legal", "d5g5 Pd5g5 Nd5g5 Bd5g5 Rd5g5 Qd5g5",
         double_check_queens_unpromotion, "4kQ2/8/4Q3/8/8/8/8/3K4 b - - 0 1","1", "PNBRQ", "legal", "UBf8e7 UNf8e7 URf8e7 UQf8e7",
-        //Wokrs fine but illegal position triple_check, "8/1R1k2R1/8/8/8/3Q4/8/3K4 b - - 0 1","1PNQRB", "PNBRQ", "legal", "",
+        //Works fine but illegal position triple_check, "8/1R1k2R1/8/8/8/3Q4/8/3K4 b - - 0 1","1PNQRB", "PNBRQ", "legal", "",
+        en_passant_legal, "1k6/8/4P3/8/8/8/nn6/Kn6 b - - 0 1","", "P", "legal", "e6e5 Pe6d5 Pe6f5 Ee6d5 Ee6f5",
+        //no_en_passant_sq_blocked, "4k1b1/8/4P3/4p3/8/n7/Kn6/nn6 b - - 0 1","", "P", "legal", "Pe6d5 Pe6f5 a2b3 Pa2b3",
     }
 
     #[test]
