@@ -1,5 +1,8 @@
 # rs-Retroboard
 
+[![crates.io](https://img.shields.io/crates/v/retroboard.svg)](https://crates.io/crates/retroboard)
+[![docs.rs](https://docs.rs/retroboard/badge.svg)](https://docs.rs/retroboard)
+
 A chess retrograde move generator. Rust port of [Retroboard](https://github.com/kraktus/retroboard-chess). Suitable for endgame tablebase generation.
 
 ## Status
