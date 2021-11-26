@@ -13,7 +13,7 @@ use crate::{
     RetroPockets, UnMove, UnMoveList,
 };
 
-/// A [`shakmaty::Board`] where `Unmove` are played and all legal `Unmove` can be generated.
+/// A [`shakmaty::Board`] where [`Unmove`](crate::UnMove) are played and all legal [`Unmove`](crate::UnMove) can be generated.
 /// At every time the position must be legal. This does include unreachable positions, like [this position](https://lichess.org/editor/3k4/2B1B3/8/8/8/8/5N2/3K4_b_-_-_0_1).
 #[derive(Clone)] // Copy?
 pub struct RetroBoard {

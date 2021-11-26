@@ -9,7 +9,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug)]
 pub struct ParseRetroPocketError;
 
-/// A [`crate::RetroBoard`] pocket with a counter for each piece type.
+/// A [`RetroBoard`](crate::RetroBoard) pocket with a counter for each piece type.
 /// It stores the pieces than can be uncaptured by each color.    
 /// `self.unpromotion` is the number of pieces than can unpromote into a pawn.
 /// By default it is set to 0
@@ -24,20 +24,27 @@ pub struct RetroPocket {
 }
 
 impl RetroPocket {
+    /// Decrement the corresponding pocket role.
+    /// # Panics
+    /// Panics if called with a [`Role`](shakmaty::Role) whose value is already equal to 0,
+    /// of if that role is the King.
+    #[inline]
     pub fn decr(&mut self, role: Role) {
         match role {
-            Role::Pawn => self.pawn -= 1,
-            Role::Knight => self.knight -= 1,
-            Role::Bishop => self.bishop -= 1,
-            Role::Rook => self.rook -= 1,
-            Role::Queen => self.queen -= 1,
+            Role::Pawn if self.pawn > 0 => self.pawn -= 1,
+            Role::Knight if self.knight > 0 => self.knight -= 1,
+            Role::Bishop if self.bishop > 0 => self.bishop -= 1,
+            Role::Rook if self.rook > 0 => self.rook -= 1,
+            Role::Queen if self.queen > 0 => self.queen -= 1,
             Role::King => panic!("Cannot uncapture king"),
+            _ => panic!("Attempt to decrement a pocket role whose value is already 0"),
         }
     }
 }
 
 impl Default for RetroPocket {
     /// Empty pocket
+    #[inline]
     fn default() -> Self {
         Self {
             pawn: 0,
