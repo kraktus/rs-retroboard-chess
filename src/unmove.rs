@@ -11,6 +11,7 @@ pub type UnMoveList = ArrayVec<UnMove, 512>; // TODO check if reducing that numb
 #[derive(Clone, Debug)]
 pub struct ParseRetroUciError;
 
+/// Enum representing the two particular moves an `UnMove` can be
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum SpecialMove {
     EnPassant,
@@ -29,6 +30,7 @@ impl FromStr for SpecialMove {
     }
 }
 
+///
 #[derive(Hash, Eq, PartialEq, Clone)]
 pub struct UnMove {
     pub from: Square,
@@ -183,6 +185,17 @@ impl UnMove {
         })
     }
 
+    /// Map the `from` and `to` attribute vertically. Represent the same move if player's color were swapped
+    /// # Examples
+    ///
+    /// ```
+    /// use retroboard::UnMove;
+    ///
+    /// assert_eq!(
+    ///     UnMove::from_retro_uci("Ua1a2").unwrap().mirror(),
+    ///     UnMove::from_retro_uci("Ua8a7").unwrap()
+    /// );
+    /// ```
     #[inline]
     #[must_use]
     pub fn mirror(&self) -> Self {
