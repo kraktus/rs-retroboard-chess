@@ -436,6 +436,7 @@ impl fmt::Debug for RetroBoard {
     }
 }
 
+/// Consider valid positions with too many/impossible checkers (unreachable positions)
 impl From<RetroBoard> for Chess {
     fn from(item: RetroBoard) -> Self {
         let setup: Fen = item
