@@ -4,6 +4,9 @@ use regex::Regex;
 use shakmaty::{Role, Square};
 use std::fmt;
 
+/// A container for unmoves that can be stored inline on the stack.
+///
+/// The capacity is limited, but there is enough space to hold the legal unmoves of any chess position.
 pub type UnMoveList = ArrayVec<UnMove, 512>; // TODO check if reducing that number is possible (256 used for std in shakmaty)
 
 /// Error when parsing an invalid retro UCI.
