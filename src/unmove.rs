@@ -41,26 +41,17 @@ impl MoveKind {
 
     #[must_use]
     pub fn is_uncapture(&self) -> bool {
-        match self {
-            Self::Uncapture(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Uncapture(_))
     }
 
     #[must_use]
     pub fn is_en_passant(&self) -> bool {
-        match self {
-            Self::EnPassant => true,
-            _ => false,
-        }
+        matches!(self, Self::EnPassant)
     }
 
     #[must_use]
     pub fn is_unpromotion(&self) -> bool {
-        match self {
-            Self::UnPromotion(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::UnPromotion(_))
     }
 
     #[must_use]
