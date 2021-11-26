@@ -26,11 +26,19 @@ pub struct RetroBoard {
 
 impl RetroBoard {
     #[must_use]
+    /// Returns a new [`RetroBoard`] with empty [`RetroPocket`](crate::RetroPocket) for both colors.
     pub fn new_no_pockets(fen: &str) -> Option<Self> {
         Self::new(fen, "", "")
     }
 
     #[must_use]
+    /// Returns a new [`RetroBoard`] with defined [`RetroPocket`](crate::RetroPocket), see [`RetroPocket::from_str`](crate::RetroPocket) documentation
+    /// to see which string format is expected.
+    /// # Examples
+    /// ```
+    /// use retroboard::RetroBoard;
+    /// let r = RetroBoard::new("3k4/8/8/8/8/8/8/2RKR3 w - - 0 1", "PNQ1", "7BBBB").unwrap();
+    /// ```
     pub fn new(fen: &str, pocket_white: &str, pocket_black: &str) -> Option<Self> {
         let fen_vec: Vec<&str> = fen.split(' ').collect();
         let retro_turn = match *fen_vec.get(1).unwrap_or(&"w") {

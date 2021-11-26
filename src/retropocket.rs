@@ -76,6 +76,19 @@ impl FromStr for RetroPocket {
     type Err = ParseRetroPocketError;
 
     #[allow(clippy::cast_possible_truncation)]
+    /// Returns a [`RetroPocket`] taking a string which contains as many letters representing the piece [`Role`](shakmaty::Role) in standard annotation, and a single number for the number of promotion, if any.
+    /// # Examples
+    /// ```
+    /// use std::str::FromStr;
+    /// use retroboard::RetroPocket;
+    ///
+    /// let retro_pocket = RetroPocket::from_str("PPPQNB6").unwrap();
+    /// assert_eq!(retro_pocket.pawn, 3);
+    /// assert_eq!(retro_pocket.queen, 1);
+    /// assert_eq!(retro_pocket.knight, 1);
+    /// assert_eq!(retro_pocket.bishop, 1);
+    /// assert_eq!(retro_pocket.unpromotion, 6);
+    /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut pawn: u8 = 0;
         let mut knight: u8 = 0;
