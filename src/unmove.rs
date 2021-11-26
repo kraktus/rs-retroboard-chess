@@ -39,6 +39,7 @@ impl MoveKind {
         }
     }
 
+    #[must_use]
     pub fn is_uncapture(&self) -> bool {
         match self {
             Self::Uncapture(_) => true,
@@ -46,6 +47,7 @@ impl MoveKind {
         }
     }
 
+    #[must_use]
     pub fn is_en_passant(&self) -> bool {
         match self {
             Self::EnPassant => true,
@@ -53,6 +55,7 @@ impl MoveKind {
         }
     }
 
+    #[must_use]
     pub fn is_unpromotion(&self) -> bool {
         match self {
             Self::UnPromotion(_) => true,
@@ -60,6 +63,7 @@ impl MoveKind {
         }
     }
 
+    #[must_use]
     pub fn to_retro_uci(&self) -> String {
         match self {
             Self::Normal => "".to_string(),
