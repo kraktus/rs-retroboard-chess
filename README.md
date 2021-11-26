@@ -12,7 +12,7 @@ En-passant is supported, but not castling. Legal but unreachable positions are s
 
 ## Performance
 
-A very rough perft test at depth 4 on this position gives 88148797 moves on depth 3 in ~2s (tested on Apple M1). That is roughly 7x times slower than `shakmaty` crate, but is ought to be improved.
+A very rough perft test at depth 4 on this position gives 88148797 moves in ~2s (tested on Apple M1). That is roughly 7x times slower than `shakmaty` crate, but is ought to be improved.
 
 ![](https://github.com/kraktus/rs-retroboard-chess/blob/master/assets/perft.svg)
 <!-- <img src="https://github.com/kraktus/rs-retroboard-chess/blob/master/assets/perft.svg" alt="Perft position" width="250"/> -->
