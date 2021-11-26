@@ -6,7 +6,7 @@
 #![doc = include_str!("../README.md")]
 
 mod unmove;
-pub use crate::unmove::{SpecialMove, UnMove, UnMoveList};
+pub use crate::unmove::{MoveKind, UnMove, UnMoveList};
 
 mod retroboard;
 pub use crate::retroboard::RetroBoard;

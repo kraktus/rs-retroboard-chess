@@ -13,18 +13,71 @@ pub struct ParseRetroUciError;
 
 /// Enum representing the two particular moves an `UnMove` can be
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
-pub enum SpecialMove {
+pub enum MoveKind {
+    Normal,
     EnPassant,
-    UnPromotion,
+    UnPromotion(Option<Role>),
+    Uncapture(Role),
 }
 
-impl FromStr for SpecialMove {
+impl MoveKind {
+    pub fn new(
+        special_move: Option<&str>,
+        uncapture: Option<&str>,
+    ) -> Result<Self, ParseRetroUciError> {
+        let role_opt = uncapture
+            .and_then(|x| x.chars().next())
+            .and_then(Role::from_char);
+        match special_move {
+            Some("U") => Ok(Self::UnPromotion(role_opt)),
+            Some("E") => Ok(Self::EnPassant),
+            None if role_opt.is_some() => Ok(Self::Uncapture(role_opt.unwrap())), // if let guard experimental
+            None => Ok(Self::Normal),
+            _ => Err(ParseRetroUciError),
+        }
+    }
+
+    pub fn is_uncapture(&self) -> bool {
+        match self {
+            Self::Uncapture(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_en_passant(&self) -> bool {
+        match self {
+            Self::EnPassant => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_unpromotion(&self) -> bool {
+        match self {
+            Self::UnPromotion(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn to_retro_uci(&self) -> String {
+        match self {
+            Self::Normal => "".to_string(),
+            Self::EnPassant => "E".to_string(),
+            Self::Uncapture(role) => role.upper_char().to_string(),
+            Self::UnPromotion(role_opt) => {
+                role_opt.map_or_else(|| "".to_owned(), |role| role.upper_char().to_string())
+            }
+        }
+    }
+}
+
+impl FromStr for MoveKind {
     type Err = ParseRetroUciError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "U" => Ok(SpecialMove::UnPromotion),
-            "E" => Ok(SpecialMove::EnPassant),
+            // temporary
+            "U" => Ok(MoveKind::UnPromotion(None)),
+            "E" => Ok(MoveKind::EnPassant),
             _ => Err(ParseRetroUciError),
         }
     }
@@ -35,8 +88,7 @@ impl FromStr for SpecialMove {
 pub struct UnMove {
     pub from: Square,
     pub to: Square,
-    uncapture: Option<Role>, // By convention no uncapture if the move is en-passant (Yes not ideal)
-    pub special_move: Option<SpecialMove>,
+    move_kind: MoveKind,
 }
 
 impl UnMove {
@@ -75,13 +127,11 @@ impl UnMove {
                     to: cap
                         .name("to")
                         .and_then(|x| Square::from_ascii(x.as_str().as_bytes()).ok())?,
-                    uncapture: cap
-                        .name("uncapture")
-                        .and_then(|x| x.as_str().chars().next())
-                        .and_then(Role::from_char),
-                    special_move: cap
-                        .name("special_move")
-                        .and_then(|x| SpecialMove::from_str(x.as_str()).ok()),
+                    move_kind: MoveKind::new(
+                        cap.name("special_move").map(|m| m.as_str()),
+                        cap.name("uncapture").map(|m| m.as_str()),
+                    )
+                    .ok()?,
                 })
             })
             .ok_or(ParseRetroUciError)
@@ -90,41 +140,24 @@ impl UnMove {
     /// Retuns a new [`UnMove`]. By convention if it is en-passant, uncapture field should be set to `None`.
     #[inline]
     #[must_use]
-    pub fn new(
-        from: Square,
-        to: Square,
-        uncapture: Option<Role>,
-        special_move: Option<SpecialMove>,
-    ) -> Self {
+    pub fn new(from: Square, to: Square, move_kind: MoveKind) -> Self {
         Self {
             from,
             to,
-            uncapture,
-            special_move,
+            move_kind,
         }
     }
 
     /// Returns a string following the retro uci standard. See [`UnMove::from_retro_uci`] for more information.
     #[must_use]
     pub fn to_retro_uci(&self) -> String {
-        format!(
-            "{}{}{}{}",
-            match self.special_move {
-                Some(SpecialMove::UnPromotion) => "U".to_owned(),
-                Some(SpecialMove::EnPassant) => "E".to_owned(),
-                _ => "".to_owned(),
-            },
-            self.uncapture
-                .map_or_else(|| "".to_owned(), |role| role.upper_char().to_string()),
-            self.from,
-            self.to
-        )
+        format!("{}{}{}", self.move_kind.to_retro_uci(), self.from, self.to)
     }
 
     #[inline]
     #[must_use]
     pub fn is_uncapture(&self) -> bool {
-        self.uncapture.is_some()
+        self.move_kind.is_uncapture()
     }
 
     #[inline]
@@ -132,23 +165,23 @@ impl UnMove {
     pub fn uncapture(&self) -> Option<Role> {
         if self.is_en_passant() {
             Some(Role::Pawn)
+        } else if let MoveKind::Uncapture(role) = self.move_kind {
+            Some(role)
         } else {
-            self.uncapture
+            None
         }
     }
 
     #[inline]
     #[must_use]
     pub fn is_unpromotion(&self) -> bool {
-        self.special_move
-            .map_or(false, |x| x == SpecialMove::UnPromotion)
+        self.move_kind.is_unpromotion()
     }
 
     #[inline]
     #[must_use]
     pub fn is_en_passant(&self) -> bool {
-        self.special_move
-            .map_or(false, |x| x == SpecialMove::EnPassant)
+        self.move_kind.is_en_passant()
     }
 
     /// If the move is an uncapture moves, returns the square when the piece uncaptured will land.
@@ -202,8 +235,7 @@ impl UnMove {
         Self {
             from: self.from.flip_vertical(),
             to: self.to.flip_vertical(),
-            uncapture: self.uncapture,
-            special_move: self.special_move,
+            move_kind: self.move_kind,
         }
     }
 }

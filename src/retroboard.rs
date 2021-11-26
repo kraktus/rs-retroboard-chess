@@ -8,7 +8,10 @@ use std::hash::{Hash, Hasher};
 
 use std::cmp::Ordering;
 
-use crate::{RetroPockets, SpecialMove, UnMove, UnMoveList};
+use crate::{
+    MoveKind::EnPassant, MoveKind::Normal, MoveKind::UnPromotion, MoveKind::Uncapture,
+    RetroPockets, UnMove, UnMoveList,
+};
 
 /// A [`shakmaty::Board`] where `Unmove` are played and all legal `Unmove` can be generated.
 /// At every time the position must be legal. This does include unreachable positions, like [this position](https://lichess.org/editor/3k4/2B1B3/8/8/8/8/5N2/3K4_b_-_-_0_1).
@@ -96,8 +99,7 @@ impl RetroBoard {
             moves.push(UnMove::new(
                 sq.offset(self.retro_turn.fold(8, -8)).unwrap(), // from
                 sq.offset(self.retro_turn.fold(-8, 8)).unwrap(), // to
-                None,
-                None,
+                Normal,
             ))
         } else {
             self.gen_pieces(moves);
@@ -134,7 +136,7 @@ impl RetroBoard {
                     (retro_attacks(from, from_piece, self.occupied()) & target).first()
                 {
                     if from_piece.role != Role::Pawn {
-                        moves.push(UnMove::new(from, to, None, None));
+                        moves.push(UnMove::new(from, to, Normal));
                     }
                     self.gen_en_passant(&mut moves, target);
                     self.gen_uncaptures(from, to, false, &mut moves);
@@ -296,7 +298,7 @@ impl RetroBoard {
             .offset(self.retro_turn.fold(-8, 8))
             .expect("We're in the eighth rank and going back so square exists");
         if self.board.piece_at(to).is_none() {
-            moves.push(UnMove::new(from, to, None, Some(SpecialMove::UnPromotion)));
+            moves.push(UnMove::new(from, to, UnPromotion(None)));
         };
         self.gen_pawn_uncaptures(from, true, moves);
     }
@@ -306,7 +308,7 @@ impl RetroBoard {
             for to in attacks::attacks(from, self.board.piece_at(from).unwrap(), self.occupied())
                 & !self.occupied()
             {
-                moves.push(UnMove::new(from, to, None, None));
+                moves.push(UnMove::new(from, to, Normal));
                 self.gen_uncaptures(from, to, false, moves)
             }
         }
@@ -325,7 +327,7 @@ impl RetroBoard {
             for from in ep_pawns {
                 for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() & target
                 {
-                    moves.push(UnMove::new(from, to, None, Some(SpecialMove::EnPassant)));
+                    moves.push(UnMove::new(from, to, EnPassant));
                 }
             }
         }
@@ -346,13 +348,13 @@ impl RetroBoard {
 
         for to in single_moves & !Bitboard::BACKRANKS {
             if let Some(from) = to.offset(self.retro_turn.fold(8, -8)) {
-                moves.push(UnMove::new(from, to, None, None));
+                moves.push(UnMove::new(from, to, Normal));
             }
         }
 
         for to in double_moves {
             if let Some(from) = to.offset(self.retro_turn.fold(16, -16)) {
-                moves.push(UnMove::new(from, to, None, None));
+                moves.push(UnMove::new(from, to, Normal));
             }
         }
     }
@@ -374,11 +376,10 @@ impl RetroBoard {
                 UnMove::new(
                     from,
                     to,
-                    Some(r),
                     if unpromotion {
-                        Some(SpecialMove::UnPromotion)
+                        UnPromotion(Some(r))
                     } else {
-                        None
+                        Uncapture(r)
                     },
                 )
             })
