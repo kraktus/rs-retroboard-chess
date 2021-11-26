@@ -7,7 +7,7 @@ use std::fmt;
 pub type UnMoveList = ArrayVec<UnMove, 512>; // TODO check if reducing that number is possible (256 used for std in shakmaty)
 
 /// Error when parsing an invalid retro UCI.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParseRetroUciError;
 
 /// Enum representing the different kind of type an [`UnMove`] can be.
@@ -29,7 +29,7 @@ impl MoveKind {
             .and_then(Role::from_char);
         match special_move {
             Some("U") => Ok(Self::UnPromotion(role_opt)),
-            Some("E") => Ok(Self::EnPassant),
+            Some("E") if role_opt.is_none() => Ok(Self::EnPassant),
             Some("") if role_opt.is_some() => Ok(Self::Uncapture(role_opt.unwrap())), // if let guard experimental
             Some("") => Ok(Self::Normal),
             _ => Err(ParseRetroUciError),
@@ -70,7 +70,9 @@ impl MoveKind {
     }
 }
 
+/// Information about a move.
 ///
+/// Called [`UnMove`] not to be confused with [`shakmaty::Move`]. When there is no doubt about which one is reffered to, can be called "move".
 #[derive(Hash, Eq, PartialEq, Clone)]
 pub struct UnMove {
     pub from: Square,
@@ -99,6 +101,30 @@ impl UnMove {
     /// regex: r"\[UE\]?\[NBRQ\]?(\[abcdefgh\]\[1-8\]){2}"
     ///
     /// Note: A unmove being accepted does not means it is for sure legal, just syntaxically correct
+    /// # Examples
+    ///
+    /// ```
+    /// use retroboard::UnMove;
+    /// use shakmaty::{Square, Role};
+    ///
+    /// let simple_move: UnMove = UnMove::from_retro_uci("Pe2e4").unwrap();
+    /// assert_eq!(simple_move.from, Square::E2);
+    /// assert_eq!(simple_move.to, Square::E4);
+    /// assert_eq!(simple_move.uncapture(), Some(Role::Pawn));
+    ///
+    /// let unpromotion: UnMove = UnMove::from_retro_uci("Ue8e7").unwrap();
+    /// assert_eq!(unpromotion.from, Square::E8);
+    /// assert_eq!(unpromotion.to, Square::E7);
+    /// assert!(unpromotion.is_unpromotion());
+    /// assert!(!unpromotion.is_en_passant());
+    ///
+    /// let en_passant: UnMove = UnMove::from_retro_uci("Ee3d4").unwrap();
+    /// assert_eq!(en_passant.from, Square::E3);
+    /// assert_eq!(en_passant.to, Square::D4);
+    /// assert!(en_passant.is_en_passant());
+    /// assert!(!en_passant.is_unpromotion());
+    /// ```
+
     #[allow(clippy::doc_markdown)]
     pub fn from_retro_uci(retro_uci: &str) -> Result<UnMove, ParseRetroUciError> {
         lazy_static! {
@@ -275,6 +301,13 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_retro_uci_en_passant_error() {
+        let e: Result<UnMove, ParseRetroUciError> = Err(ParseRetroUciError);
+        assert_eq!(UnMove::from_retro_uci("EPe3d4"), e);
+        assert_eq!(UnMove::from_retro_uci("EQe3d4"), e);
+    }
+
+    #[test]
     fn test_to_uci() {
         for x in &["e2e4", "Pe2e4", "Ue8e7", "Ee3d4", "Qa1a2", "Ba1a2", "Nd4d5"] {
             let unmove: UnMove = UnMove::from_retro_uci(x).unwrap();
@@ -309,26 +342,13 @@ mod tests {
 
     #[test]
     fn test_uncapture_square() {
-        assert_eq!(
-            UnMove::from_retro_uci("Ed3e4")
-                .unwrap()
-                .uncapture_square()
-                .unwrap(),
-            Square::D4,
-        );
+        // part of the test is in rust-doc
         assert_eq!(
             UnMove::from_retro_uci("Eb6c5")
                 .unwrap()
                 .uncapture_square()
                 .unwrap(),
             Square::B5,
-        );
-        assert_eq!(
-            UnMove::from_retro_uci("Qa8h1")
-                .unwrap()
-                .uncapture_square()
-                .unwrap(),
-            Square::A8,
         );
     }
 }
