@@ -3,7 +3,6 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use shakmaty::{Role, Square};
 use std::fmt;
-use std::str::FromStr;
 
 pub type UnMoveList = ArrayVec<UnMove, 512>; // TODO check if reducing that number is possible (256 used for std in shakmaty)
 
@@ -11,7 +10,7 @@ pub type UnMoveList = ArrayVec<UnMove, 512>; // TODO check if reducing that numb
 #[derive(Clone, Debug)]
 pub struct ParseRetroUciError;
 
-/// Enum representing the two particular moves an `UnMove` can be
+/// Enum representing the different kind of type an [`UnMove`] can be.
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum MoveKind {
     Normal,
@@ -71,19 +70,6 @@ impl MoveKind {
     }
 }
 
-impl FromStr for MoveKind {
-    type Err = ParseRetroUciError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            // temporary
-            "U" => Ok(MoveKind::UnPromotion(None)),
-            "E" => Ok(MoveKind::EnPassant),
-            _ => Err(ParseRetroUciError),
-        }
-    }
-}
-
 ///
 #[derive(Hash, Eq, PartialEq, Clone)]
 pub struct UnMove {
@@ -138,7 +124,7 @@ impl UnMove {
             .ok_or(ParseRetroUciError)
     }
 
-    /// Retuns a new [`UnMove`]. By convention if it is en-passant, uncapture field should be set to `None`.
+    /// Retuns a new [`UnMove`].
     #[inline]
     #[must_use]
     pub fn new(from: Square, to: Square, move_kind: MoveKind) -> Self {
