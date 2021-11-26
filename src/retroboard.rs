@@ -385,7 +385,7 @@ impl RetroBoard {
             })
         {
             if !(Bitboard::BACKRANKS.contains(unmove.from)
-                && unmove.uncapture() == Some(Role::Pawn))
+                && dbg! {unmove.uncapture()} == Some(Role::Pawn))
             {
                 // pawns cannot be uncaptured on backrank
                 moves.push(unmove)

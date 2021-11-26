@@ -28,7 +28,7 @@ impl MoveKind {
         let role_opt = uncapture
             .and_then(|x| x.chars().next())
             .and_then(Role::from_char);
-        match dbg! {special_move} {
+        match special_move {
             Some("U") => Ok(Self::UnPromotion(role_opt)),
             Some("E") => Ok(Self::EnPassant),
             Some("") if role_opt.is_some() => Ok(Self::Uncapture(role_opt.unwrap())), // if let guard experimental
@@ -164,12 +164,11 @@ impl UnMove {
     #[inline]
     #[must_use]
     pub fn uncapture(&self) -> Option<Role> {
-        if self.is_en_passant() {
-            Some(Role::Pawn)
-        } else if let MoveKind::Uncapture(role) = self.move_kind {
-            Some(role)
-        } else {
-            None
+        match self.move_kind {
+            MoveKind::Normal => None,
+            MoveKind::Uncapture(role) => Some(role),
+            MoveKind::UnPromotion(role_opt) => role_opt,
+            MoveKind::EnPassant => Some(Role::Pawn),
         }
     }
 
