@@ -28,11 +28,11 @@ impl MoveKind {
         let role_opt = uncapture
             .and_then(|x| x.chars().next())
             .and_then(Role::from_char);
-        match special_move {
+        match dbg! {special_move} {
             Some("U") => Ok(Self::UnPromotion(role_opt)),
             Some("E") => Ok(Self::EnPassant),
-            None if role_opt.is_some() => Ok(Self::Uncapture(role_opt.unwrap())), // if let guard experimental
-            None => Ok(Self::Normal),
+            Some("") if role_opt.is_some() => Ok(Self::Uncapture(role_opt.unwrap())), // if let guard experimental
+            Some("") => Ok(Self::Normal),
             _ => Err(ParseRetroUciError),
         }
     }
@@ -64,7 +64,8 @@ impl MoveKind {
             Self::EnPassant => "E".to_string(),
             Self::Uncapture(role) => role.upper_char().to_string(),
             Self::UnPromotion(role_opt) => {
-                role_opt.map_or_else(|| "".to_owned(), |role| role.upper_char().to_string())
+                "U".to_string()
+                    + &role_opt.map_or_else(|| "".to_owned(), |role| role.upper_char().to_string())
             }
         }
     }
@@ -255,7 +256,7 @@ mod tests {
         let simple_move: UnMove = UnMove::from_retro_uci("e2e4").unwrap();
         assert_eq!(simple_move.from, Square::E2);
         assert_eq!(simple_move.to, Square::E4);
-        assert_eq!(simple_move.uncapture, None);
+        assert_eq!(simple_move.uncapture(), None);
         assert!(!simple_move.is_unpromotion());
         assert!(!simple_move.is_en_passant());
     }
@@ -265,7 +266,7 @@ mod tests {
         let simple_move: UnMove = UnMove::from_retro_uci("Pe2e4").unwrap();
         assert_eq!(simple_move.from, Square::E2);
         assert_eq!(simple_move.to, Square::E4);
-        assert_eq!(simple_move.uncapture.unwrap(), Role::Pawn);
+        assert_eq!(simple_move.uncapture(), Some(Role::Pawn));
         assert!(!simple_move.is_unpromotion());
         assert!(!simple_move.is_en_passant());
     }
