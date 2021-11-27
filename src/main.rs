@@ -1,5 +1,5 @@
 use shakmaty::perft as shakmaty_perft;
-use shakmaty::Chess;
+use shakmaty::{fen::Fen, CastlingMode, Chess};
 use std::time::Instant;
 
 use retroboard::RetroBoard;
@@ -40,17 +40,17 @@ fn perft(r: &RetroBoard, depth: u32) -> u64 {
 }
 
 fn main() {
-    let r = RetroBoard::new(
-        "q4N2/1p5k/8/8/6P1/4Q3/1K1PB3/7r b - - 0 1",
-        "2PNBRQ",
-        "3NBRQP",
-    )
-    .unwrap();
+    let fen = "q4N2/1p5k/8/8/6P1/4Q3/1K1PB3/7r b - - 0 1";
+    let r = RetroBoard::new(fen, "2PNBRQ", "3NBRQP").unwrap();
     let start = Instant::now();
     let depth = 4;
     let leaves = perft(&r, depth);
     let stop = start.elapsed();
-    let pos = Chess::default();
+    let pos: Chess = fen
+        .parse::<Fen>()
+        .unwrap()
+        .position(CastlingMode::Standard)
+        .unwrap();
     let shakmaty_start = Instant::now();
     let shakmaty_depth = 6;
     let shakmaty_leaves = shakmaty_perft(&pos, shakmaty_depth);
