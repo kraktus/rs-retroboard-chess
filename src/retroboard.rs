@@ -1,15 +1,19 @@
-use shakmaty::Piece;
-use shakmaty::{
-    attacks, fen::Fen, Bitboard, Board, CastlingMode, Chess, Color, Color::Black, Color::White,
-    Rank, Role, Square,
+use std::{
+    cmp::Ordering,
+    fmt,
+    hash::{Hash, Hasher},
 };
-use std::fmt;
-use std::hash::{Hash, Hasher};
 
-use std::cmp::Ordering;
+use shakmaty::{
+    attacks,
+    fen::Fen,
+    Bitboard, Board, CastlingMode, Chess, Color,
+    Color::{Black, White},
+    Piece, Rank, Role, Square,
+};
 
 use crate::{
-    MoveKind::EnPassant, MoveKind::Normal, MoveKind::UnPromotion, MoveKind::Uncapture,
+    MoveKind::{EnPassant, Normal, UnPromotion, Uncapture},
     RetroPockets, UnMove, UnMoveList,
 };
 
@@ -501,12 +505,14 @@ fn closest_further_square(bb: Bitboard, of: Square) -> (Square, Square) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use pretty_assertions::{assert_eq, assert_ne};
+    use std::collections::HashSet;
+
     use indoc::indoc;
     use paste::paste;
     use shakmaty::{uci::Uci, Position};
-    // use pretty_assertions::{assert_eq, assert_ne};
-    use std::collections::HashSet;
+
+    use super::*;
 
     fn u(s: &str) -> UnMove {
         UnMove::from_retro_uci(s).unwrap()

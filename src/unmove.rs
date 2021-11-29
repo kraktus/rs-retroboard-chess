@@ -1,8 +1,9 @@
+use std::fmt;
+
 use arrayvec::ArrayVec;
 use lazy_static::lazy_static;
 use regex::Regex;
 use shakmaty::{Role, Square};
-use std::fmt;
 
 /// A container for unmoves that can be stored inline on the stack.
 ///

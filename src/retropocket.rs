@@ -1,9 +1,10 @@
-use shakmaty::{Color, Color::Black, Color::White, Role};
-use std::fmt;
-use std::fmt::Write;
-use std::str::FromStr;
+use std::{fmt, fmt::Write, str::FromStr};
 
-// use arrayvec::ArrayVec;
+use shakmaty::{
+    Color,
+    Color::{Black, White},
+    Role,
+};
 
 /// Error when parsing an invalid retro UCI.
 #[derive(Clone, Debug)]

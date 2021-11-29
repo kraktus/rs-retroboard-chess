@@ -1,8 +1,7 @@
-use shakmaty::perft as shakmaty_perft;
-use shakmaty::{fen::Fen, CastlingMode, Chess};
 use std::time::Instant;
 
 use retroboard::RetroBoard;
+use shakmaty::{fen::Fen, perft as shakmaty_perft, CastlingMode, Chess};
 /// From shakmaty code source
 /// Counts legal move paths of a given length.
 ///
