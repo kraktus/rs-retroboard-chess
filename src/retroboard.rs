@@ -266,12 +266,14 @@ impl RetroBoard {
     }
 
     #[inline]
+    #[must_use]
     fn occupied(&self) -> Bitboard {
         self.board.occupied()
     }
 
     #[inline]
-    fn king_of(&self, color: Color) -> Square {
+    #[must_use]
+    pub fn king_of(&self, color: Color) -> Square {
         self.board.king_of(color).unwrap()
     }
 
