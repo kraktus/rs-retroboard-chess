@@ -9,7 +9,7 @@ use shakmaty::{
     fen::Fen,
     Bitboard, Board, CastlingMode, Chess, Color,
     Color::{Black, White},
-    Piece, Rank, Role, Square,
+    FromSetup, Piece, PositionError, Rank, Role, Setup, Square,
 };
 
 use crate::{
@@ -440,6 +440,19 @@ impl fmt::Debug for RetroBoard {
     }
 }
 
+impl FromSetup for RetroBoard {
+    /// [`RetroPocket`](crate::RetroPocket) will be empty for both colors
+    fn from_setup(setup: &dyn Setup, _: CastlingMode) -> Result<Self, PositionError<Self>> {
+        Ok(Self {
+            board: setup.board().clone(),
+            retro_turn: !setup.turn(),
+            ep_square: setup.ep_square(),
+            halfmoves: 0,
+            pockets: RetroPockets::default(),
+        })
+    }
+}
+
 /// Consider valid positions with too many/impossible checkers (unreachable positions)
 impl From<RetroBoard> for Chess {
     fn from(item: RetroBoard) -> Self {
@@ -549,10 +562,10 @@ mod tests {
     }
 
     #[test]
-    fn new_no_pockets() {
+    fn test_new_no_pockets() {
         let r =
             RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-                .expect("Retroboard bc fen is legal");
+                .expect("Retroboard because fen is legal");
         assert_eq!(r.retro_turn, Black);
         assert_eq!(
             r.board,
@@ -561,6 +574,18 @@ mod tests {
         );
         assert_eq!(r.pockets, RetroPockets::default());
         assert_eq!(r.halfmoves, 0);
+    }
+
+    #[test]
+    fn test_from_setup() {
+        let r =
+            RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+                .expect("Retroboard because fen is legal");
+        let fen: Fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+            .parse()
+            .unwrap();
+        let r_setup = RetroBoard::from_setup(&fen, CastlingMode::Standard).unwrap();
+        assert_eq!(r, r_setup);
     }
 
     #[test]
