@@ -243,6 +243,12 @@ impl RetroBoard {
 
     #[inline]
     #[must_use]
+    pub fn retro_turn(&self) -> Color {
+        self.retro_turn
+    }
+
+    #[inline]
+    #[must_use]
     pub fn us(&self) -> Bitboard {
         self.board.by_color(self.retro_turn)
     }
