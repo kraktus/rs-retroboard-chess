@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM rust:1.56.1-buster
 
  MAINTAINER Kraktus
 
@@ -6,12 +6,12 @@ FROM ubuntu:20.04
  RUN mkdir rs_retroboard
  WORKDIR ./rs_retroboard
 
- # Install rust
- RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
  RUN apt-get update && apt-get upgrade -y
 
 # Install flamegraph
-RUN apt-get install -y linux-perf
+
+RUN apt install -y linux-perf
 RUN cargo install flamegraph
 
  # Build dependencies
@@ -31,7 +31,7 @@ RUN cargo install flamegraph
  RUN cargo build
 
  ENTRYPOINT ["cargo"]
- CMD ["run
+ CMD ["run"]
 
  # docker build --force-rm -t rs-retroboard-image .
  # docker run -it --init --rm --name rs-retroboard-cont rs-retroboard-image
