@@ -1,4 +1,4 @@
-FROM rust:1.56.1-buster
+FROM rust:1.56.1-bullseye
 
  MAINTAINER Kraktus
 
@@ -30,8 +30,8 @@ RUN cargo install flamegraph
  RUN find src -name "*.rs" -exec touch {} \;
  RUN cargo build
 
- ENTRYPOINT ["cargo"]
- CMD ["run"]
 
  # docker build --force-rm -t rs-retroboard-image .
  # docker run -it --init --rm --name rs-retroboard-cont rs-retroboard-image
+
+# docker run --cap-add SYS_ADMIN -it --name rs-retroboard-cont rs-retroboard-image
