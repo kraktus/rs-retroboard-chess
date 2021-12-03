@@ -170,6 +170,7 @@ impl RetroBoard {
     }
 
     // from shakmaty code-source
+    #[inline]
     fn slider_blockers(&self, our_pieces: Bitboard, king: Square) -> Bitboard {
         let snipers = (attacks::rook_attacks(king, Bitboard(0)) & self.board.rooks_and_queens())
             | (attacks::bishop_attacks(king, Bitboard(0)) & self.board.bishops_and_queens());

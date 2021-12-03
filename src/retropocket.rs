@@ -22,6 +22,7 @@ pub struct RetroPocket {
     pub rook: u8,
     pub queen: u8,
     pub unpromotion: u8,
+    inner: Vec<Role>, // trying to speed up `IntoIterator`
 }
 
 impl RetroPocket {
@@ -32,11 +33,37 @@ impl RetroPocket {
     #[inline]
     pub fn decr(&mut self, role: Role) {
         match role {
-            Role::Pawn if self.pawn > 0 => self.pawn -= 1,
-            Role::Knight if self.knight > 0 => self.knight -= 1,
-            Role::Bishop if self.bishop > 0 => self.bishop -= 1,
-            Role::Rook if self.rook > 0 => self.rook -= 1,
-            Role::Queen if self.queen > 0 => self.queen -= 1,
+            Role::Pawn if self.pawn > 0 => {
+                self.pawn -= 1;
+                if self.pawn == 0 {
+                    self.inner.retain(|x| *x != Role::Pawn)
+                }
+            }
+            Role::Knight if self.knight > 0 => {
+                self.knight -= 1;
+                if self.knight == 0 {
+                    self.inner.retain(|x| *x != Role::Knight)
+                }
+            }
+            Role::Bishop if self.bishop > 0 => {
+                self.bishop -= 1;
+                if self.bishop == 0 {
+                    self.inner.retain(|x| *x != Role::Bishop)
+                }
+            }
+            Role::Rook if self.rook > 0 => {
+                self.rook -= 1;
+                if self.rook == 0 {
+                    self.inner.retain(|x| *x != Role::Rook)
+                }
+            }
+            Role::Queen if self.queen > 0 => {
+                self.queen -= 1;
+                if self.queen == 0 {
+                    self.inner.retain(|x| *x != Role::Queen)
+                }
+            }
+
             Role::King => panic!("Cannot uncapture king"),
             _ => panic!("Attempt to decrement a pocket role whose value is already 0"),
         }
@@ -54,6 +81,7 @@ impl Default for RetroPocket {
             rook: 0,
             queen: 0,
             unpromotion: 0,
+            inner: vec![],
         }
     }
 }
@@ -121,6 +149,22 @@ impl FromStr for RetroPocket {
                 }
             }
         }
+        let mut inner: Vec<Role> = vec![];
+        if pawn > 0 {
+            inner.push(Role::Pawn)
+        };
+        if knight > 0 {
+            inner.push(Role::Knight)
+        };
+        if bishop > 0 {
+            inner.push(Role::Bishop)
+        };
+        if rook > 0 {
+            inner.push(Role::Rook)
+        };
+        if queen > 0 {
+            inner.push(Role::Queen)
+        };
         Ok(RetroPocket {
             pawn,
             knight,
@@ -128,6 +172,7 @@ impl FromStr for RetroPocket {
             rook,
             queen,
             unpromotion: unpromotion.unwrap_or(0),
+            inner,
         })
     }
 }

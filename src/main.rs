@@ -61,7 +61,7 @@ fn shakmaty(fen: &str) {
 fn retroboard(fen: &str) {
     let r = RetroBoard::new(fen, "2PNBRQ", "3NBRQP").unwrap();
     let start = Instant::now();
-    let depth = 4;
+    let depth = 3;
     let leaves = perft(&r, depth);
     let stop = start.elapsed();
     println!(
