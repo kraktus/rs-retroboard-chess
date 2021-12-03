@@ -35,4 +35,4 @@ CMD ["flamegraph"]
 
 # docker build --force-rm -t rs-retroboard-image .
 # https://medium.com/@geekidea_81313/running-perf-in-docker-kubernetes-7eb878afcd42
-# docker run --cap-add SYS_ADMIN -it --init --name rs-retroboard-cont rs-retroboard-image && docker cp rs-retroboard-cont:/rs_retroboard/flamegraph.svg flamegraph.svg && open -a safari flamegraph.svg
+# docker build --force-rm -t rs-retroboard-image . && docker rm rs-retroboard-cont && docker run --cap-add SYS_ADMIN -it --init --name rs-retroboard-cont rs-retroboard-image && docker cp rs-retroboard-cont:/rs_retroboard/flamegraph.svg flamegraph.svg && open -a safari flamegraph.svg
