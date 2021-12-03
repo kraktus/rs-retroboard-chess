@@ -1,5 +1,7 @@
 use std::{fmt, fmt::Write, str::FromStr};
 
+use arrayvec::ArrayVec;
+
 use shakmaty::{
     Color,
     Color::{Black, White},
@@ -134,10 +136,10 @@ impl FromStr for RetroPocket {
 
 impl IntoIterator for RetroPocket {
     type Item = Role;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type IntoIter = arrayvec::IntoIter<Self::Item, 5>;
 
     fn into_iter(self) -> Self::IntoIter {
-        let mut v: Vec<Role> = vec![];
+        let mut v: ArrayVec<Role, 5> = ArrayVec::new();
         if self.pawn > 0 {
             v.push(Role::Pawn)
         };
