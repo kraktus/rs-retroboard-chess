@@ -1,6 +1,6 @@
 [package]
 name = "retroboard"
-version = "0.1.3-dev"
+version = "0.1.4-dev"
 publish = false # Comment this line out before publishing
 authors = ["Kraktus"]
 description = "A chess retrograde move generator, suitable for endgame tablebase generation"
