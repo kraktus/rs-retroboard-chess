@@ -1,7 +1,7 @@
 [package]
 name = "retroboard"
 version = "0.2.1-dev"
-publish = false # Comment this line out before publishing
+# publish = false # Comment this line out before publishing
 authors = ["Kraktus"]
 description = "A chess retrograde move generator, suitable for endgame tablebase generation"
 repository = "https://github.com/kraktus/rs-retroboard-chess"
@@ -18,7 +18,7 @@ categories = ["games", "game-engines"]
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-shakmaty = "0.20.2"
+shakmaty = { git = "https://github.com/niklasf/shakmaty", rev = "7190fc23126c67c1445064b7065a1c3772055050" } # waiting for shakmaty release with support for `Board` transformation
 regex = "1.5"
 lazy_static = "1.4"
 arrayvec = "0.7"
