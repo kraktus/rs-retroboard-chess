@@ -289,6 +289,41 @@ impl RetroBoard {
     }
 
     #[inline]
+    pub fn flip_vertical(&mut self) {
+        self.board.flip_vertical()
+    }
+
+    #[inline]
+    pub fn flip_horizontal(&mut self) {
+        self.board.flip_horizontal()
+    }
+
+    #[inline]
+    pub fn flip_diagonal(&mut self) {
+        self.board.flip_diagonal()
+    }
+
+    #[inline]
+    pub fn flip_anti_diagonal(&mut self) {
+        self.board.flip_anti_diagonal()
+    }
+
+    #[inline]
+    pub fn rotate_90(&mut self) {
+        self.board.rotate_90()
+    }
+
+    #[inline]
+    pub fn rotate_180(&mut self) {
+        self.board.rotate_180()
+    }
+
+    #[inline]
+    pub fn rotate_270(&mut self) {
+        self.board.rotate_270()
+    }
+
+    #[inline]
     fn epd(&self) -> String {
         format!(
             "{} {} - {}",
@@ -631,6 +666,48 @@ mod tests {
         assert_eq!(
             retro_attacks(Square::A1, Black.knight(), Bitboard::EMPTY),
             Bitboard::EMPTY | Square::B3 | Square::C2
+        );
+    }
+
+    #[test]
+    fn test_rboard_transformation() {
+        let rboard = RetroBoard::new_no_pockets("1qrb4/1k2n3/1P2p3/1N1K4/1BQ5/1R1R4/1Q2B3/1K3N2")
+            .expect("valid fen");
+        let compare_trans = |trans: &dyn Fn(&mut RetroBoard), fen: &str| {
+            let mut rboard_trans = rboard.clone();
+            trans(&mut rboard_trans);
+            assert_eq!(
+                rboard_trans,
+                RetroBoard::new_no_pockets(fen).expect("valid fen")
+            );
+        };
+        compare_trans(
+            &RetroBoard::flip_vertical,
+            "1K3N2/1Q2B3/1R1R4/1BQ5/1N1K4/1P2p3/1k2n3/1qrb4",
+        );
+        compare_trans(
+            &RetroBoard::flip_horizontal,
+            "4brq1/3n2k1/3p2P1/4K1N1/5QB1/4R1R1/3B2Q1/2N3K1",
+        );
+        compare_trans(
+            &RetroBoard::flip_diagonal,
+            "8/8/N7/1B3pn1/2R1K2b/3Q3r/KQRBNPkq/8",
+        );
+        compare_trans(
+            &RetroBoard::flip_anti_diagonal,
+            "8/qkPNBRQK/r3Q3/b2K1R2/1np3B1/7N/8/8",
+        );
+        compare_trans(
+            &RetroBoard::rotate_90,
+            "8/KQRBNPkq/3Q3r/2R1K2b/1B3pn1/N7/8/8",
+        );
+        compare_trans(
+            &RetroBoard::rotate_180,
+            "2N3K1/3B2Q1/4R1R1/5QB1/4K1N1/3p2P1/3n2k1/4brq1",
+        );
+        compare_trans(
+            &RetroBoard::rotate_270,
+            "8/8/7N/1np3B1/b2K1R2/r3Q3/qkPNBRQK/8",
         );
     }
 
