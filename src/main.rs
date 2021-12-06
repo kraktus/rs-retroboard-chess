@@ -38,7 +38,7 @@ fn perft(r: &RetroBoard, depth: u32) -> u64 {
     }
 }
 
-fn shakmaty(fen: &str) {
+fn _shakmaty(fen: &str) {
     let pos: Chess = fen
         .parse::<Fen>()
         .unwrap()
