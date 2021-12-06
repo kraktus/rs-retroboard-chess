@@ -6,7 +6,7 @@ use std::{
 
 use shakmaty::{
     attacks,
-    fen::Fen,
+    fen::{Fen, ParseFenError},
     Bitboard, Board, CastlingMode, Chess, Color,
     Color::{Black, White},
     FromSetup, Piece, PositionError, Rank, Role, Setup, Square,
@@ -31,7 +31,7 @@ pub struct RetroBoard {
 impl RetroBoard {
     #[must_use]
     /// Returns a new [`RetroBoard`] with empty [`RetroPocket`](crate::RetroPocket) for both colors.
-    pub fn new_no_pockets(fen: &str) -> Option<Self> {
+    pub fn new_no_pockets(fen: &str) -> Result<Self, ParseFenError> {
         Self::new(fen, "", "")
     }
 
@@ -43,21 +43,26 @@ impl RetroBoard {
     /// use retroboard::RetroBoard;
     /// let r = RetroBoard::new("3k4/8/8/8/8/8/8/2RKR3 w - - 0 1", "PNQ1", "7BBBB").unwrap();
     /// ```
-    pub fn new(fen: &str, pocket_white: &str, pocket_black: &str) -> Option<Self> {
+    pub fn new(fen: &str, pocket_white: &str, pocket_black: &str) -> Result<Self, ParseFenError> {
         let fen_vec: Vec<&str> = fen.split(' ').collect();
         let retro_turn = match *fen_vec.get(1).unwrap_or(&"w") {
             // opposite of side to move
-            "b" => Some(White),
-            "w" => Some(Black),
-            _ => None,
+            "b" => Ok(White),
+            "w" => Ok(Black),
+            _ => Err(ParseFenError::InvalidTurn),
         }?;
-        let board = Board::from_board_fen(fen_vec.get(0)?.as_bytes()).ok()?;
-        let pockets = RetroPockets::from_str(pocket_white, pocket_black).ok()?;
+        let board = Board::from_board_fen(
+            fen_vec
+                .get(0)
+                .ok_or(ParseFenError::InvalidBoard)?
+                .as_bytes(),
+        )?;
+        let pockets = RetroPockets::from_str(pocket_white, pocket_black)?;
         let ep_square = fen_vec
             .get(3)
             .and_then(|sq| Square::from_ascii(sq.as_bytes()).ok());
         // It doesn't make sense to initialize halfmoves from the fen, since doing unmoves.
-        Some(RetroBoard {
+        Ok(RetroBoard {
             board,
             retro_turn,
             pockets,

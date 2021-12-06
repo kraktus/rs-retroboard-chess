@@ -3,6 +3,7 @@ use std::{fmt, fmt::Write, str::FromStr};
 use arrayvec::ArrayVec;
 
 use shakmaty::{
+    fen::ParseFenError,
     Color,
     Color::{Black, White},
     Role,
@@ -11,6 +12,12 @@ use shakmaty::{
 /// Error when parsing an invalid retro UCI.
 #[derive(Clone, Debug)]
 pub struct ParseRetroPocketError;
+
+impl From<ParseRetroPocketError> for ParseFenError {
+    fn from(_: ParseRetroPocketError) -> Self {
+        ParseFenError::InvalidPocket
+    }
+}
 
 /// A [`RetroBoard`](crate::RetroBoard) pocket with a counter for each piece type.
 /// It stores the pieces than can be uncaptured by each color.    
