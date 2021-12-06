@@ -3,6 +3,7 @@
 
 ## v0.2.0
 
+- Add `RetroBoard::epd` to `Debug` output of `RetroBoard`
 - `RetroBoard::new` and `RetroBoard::new_no_pockets` now return `Result<Self, ParseFenError>`
 - Implement `From<ParseRetroPocketError>` for `ParseFenError`
 - `RetroPocket::IntoIterator` now uses `ArrayVec` internally. ~60% speed up for the **whole** unmove generation

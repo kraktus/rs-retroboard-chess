@@ -443,12 +443,13 @@ impl Eq for RetroBoard {}
 impl fmt::Debug for RetroBoard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&format!(
-            "\n{}\nretro_turn = {:?}\n{:?}\nhalfmoves: {:?}\nep square: {:?}",
+            "\n{}\nretro_turn = {:?}\n{:?}\nhalfmoves: {:?}\nep square: {:?}\nepd: {}",
             show_board(&self.board),
             self.retro_turn,
             self.pockets,
             self.halfmoves,
             self.ep_square,
+            self.epd()
         ))
     }
 }
@@ -570,7 +571,8 @@ mod tests {
                 retro_turn = Black
                 RetroPockets { black: \"PPNBBRQ4\", white: \"PPPNBR2\" }
                 halfmoves: 0
-                ep square: None"}
+                ep square: None
+                epd: kqrbn2k/5p2/8/8/8/8/5P2/KQRBN3 w - -"}
         )
     }
 
