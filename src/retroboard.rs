@@ -114,8 +114,8 @@ impl RetroBoard {
         if let Some(sq) = self.ep_square {
             // ep square always on the third or sixth rank, so offseting is fine
             moves.push(UnMove::new(
-                sq.offset(self.retro_turn.fold(8, -8)).unwrap(), // from
-                sq.offset(self.retro_turn.fold(-8, 8)).unwrap(), // to
+                sq.offset(self.retro_turn.fold_wb(8, -8)).unwrap(), // from
+                sq.offset(self.retro_turn.fold_wb(-8, 8)).unwrap(), // to
                 Normal,
             ))
         } else {
@@ -355,7 +355,7 @@ impl RetroBoard {
 
     fn gen_unpromotion_on(&self, from: Square, moves: &mut UnMoveList) {
         let to = from
-            .offset(self.retro_turn.fold(-8, 8))
+            .offset(self.retro_turn.fold_wb(-8, 8))
             .expect("We're in the eighth rank and going back so square exists");
         if self.board.piece_at(to).is_none() {
             moves.push(UnMove::new(from, to, UnPromotion(None)));
@@ -407,13 +407,13 @@ impl RetroBoard {
             & !self.occupied();
 
         for to in single_moves & !Bitboard::BACKRANKS {
-            if let Some(from) = to.offset(self.retro_turn.fold(8, -8)) {
+            if let Some(from) = to.offset(self.retro_turn.fold_wb(8, -8)) {
                 moves.push(UnMove::new(from, to, Normal));
             }
         }
 
         for to in double_moves {
-            if let Some(from) = to.offset(self.retro_turn.fold(16, -16)) {
+            if let Some(from) = to.offset(self.retro_turn.fold_wb(16, -16)) {
                 moves.push(UnMove::new(from, to, Normal));
             }
         }
