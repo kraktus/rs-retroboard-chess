@@ -18,7 +18,7 @@ categories = ["games", "game-engines"]
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-shakmaty = { git = "https://github.com/niklasf/shakmaty", rev = "7190fc23126c67c1445064b7065a1c3772055050" } # waiting for shakmaty release with support for `Board` transformation
+shakmaty = "0.20.3"
 regex = "1.5"
 lazy_static = "1.4"
 arrayvec = "0.7"
