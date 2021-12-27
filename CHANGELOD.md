@@ -1,6 +1,11 @@
 # Changelog for retroboard
 
 
+## v0.2.1
+
+- Update shamkaty to `v0.20.3`
+- 
+
 ## v0.2.0
 
 - Add `RetroBoard::epd` to `Debug` output of `RetroBoard`
