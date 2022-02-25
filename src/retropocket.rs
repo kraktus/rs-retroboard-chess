@@ -1,4 +1,4 @@
-use std::{fmt, fmt::Write, str::FromStr};
+use std::{error::Error, fmt, fmt::Write, str::FromStr};
 
 use arrayvec::ArrayVec;
 
@@ -10,7 +10,7 @@ use shakmaty::{
 };
 
 /// Error when parsing an invalid retro UCI.
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct ParseRetroPocketError;
 
 impl From<ParseRetroPocketError> for ParseFenError {
@@ -18,6 +18,15 @@ impl From<ParseRetroPocketError> for ParseFenError {
         ParseFenError::InvalidPocket
     }
 }
+
+impl fmt::Display for ParseRetroPocketError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let fen_error: ParseFenError = (*self).into();
+        write!(f, "{fen_error}")
+    }
+}
+
+impl Error for ParseRetroPocketError {}
 
 /// A [`RetroBoard`](crate::RetroBoard) pocket with a counter for each piece type.
 /// It stores the pieces than can be uncaptured by each color.    

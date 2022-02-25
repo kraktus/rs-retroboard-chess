@@ -1,5 +1,8 @@
 # Changelog for retroboard
 
+## v0.2.2
+
+- Implement `Copy`, `fmt::Display` and `std::error::Error` for `ParseRetroPocketError`.
 
 ## v0.2.1
 
