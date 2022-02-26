@@ -2,6 +2,7 @@
 
 ## v0.2.2
 
+- Update shamkaty to `v0.21`
 - Implement `Copy`, `fmt::Display` and `std::error::Error` for `ParseRetroPocketError`.
 
 ## v0.2.1

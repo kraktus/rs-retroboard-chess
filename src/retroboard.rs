@@ -51,7 +51,7 @@ impl RetroBoard {
             "w" => Ok(Black),
             _ => Err(ParseFenError::InvalidTurn),
         }?;
-        let board = Board::from_board_fen(
+        let board = Board::from_ascii_board_fen(
             fen_vec
                 .get(0)
                 .ok_or(ParseFenError::InvalidBoard)?
@@ -347,7 +347,7 @@ impl RetroBoard {
 
     fn gen_unpromotion(&self, moves: &mut UnMoveList) {
         if self.pockets.color(self.retro_turn).unpromotion > 0 {
-            for from in self.us() & Bitboard::relative_rank(self.retro_turn, Rank::Eighth) {
+            for from in self.us() & self.retro_turn.relative_rank(Rank::Eighth) {
                 self.gen_unpromotion_on(from, moves);
             }
         }
@@ -378,10 +378,10 @@ impl RetroBoard {
         if self.pockets.color(!self.retro_turn).pawn > 0 {
             // pawns on the relative 6th rank with free space above AND below them
             let ep_pawns = self.our(Role::Pawn)
-                & Bitboard::relative_rank(self.retro_turn, Rank::Sixth)
-                & (!(Bitboard::relative_rank(self.retro_turn, Rank::Fifth) & self.occupied()))
+                & self.retro_turn.relative_rank(Rank::Sixth)
+                & (!(self.occupied() & self.retro_turn.relative_rank(Rank::Fifth)))
                     .relative_shift(self.retro_turn, 8)
-                & (!(Bitboard::relative_rank(self.retro_turn, Rank::Seventh) & self.occupied()))
+                & (!(self.occupied() & self.retro_turn.relative_rank(Rank::Seventh)))
                     .relative_shift(!self.retro_turn, 8);
 
             for from in ep_pawns {
@@ -395,7 +395,9 @@ impl RetroBoard {
 
     fn gen_pawns(&self, moves: &mut UnMoveList) {
         // generate pawn uncaptures
-        for from in self.our(Role::Pawn) & !Bitboard::relative_rank(self.retro_turn, Rank::Second) {
+        for from in
+            self.our(Role::Pawn) & !Bitboard::from(self.retro_turn.relative_rank(Rank::Second))
+        {
             self.gen_pawn_uncaptures(from, false, moves)
         }
 
@@ -403,7 +405,7 @@ impl RetroBoard {
             self.our(Role::Pawn).relative_shift(!self.retro_turn, 8) & !self.occupied();
 
         let double_moves = single_moves.relative_shift(!self.retro_turn, 8)
-            & Bitboard::relative_rank(self.retro_turn, Rank::Second)
+            & self.retro_turn.relative_rank(Rank::Second)
             & !self.occupied();
 
         for to in single_moves & !Bitboard::BACKRANKS {
@@ -491,11 +493,11 @@ impl fmt::Debug for RetroBoard {
 
 impl FromSetup for RetroBoard {
     /// [`RetroPocket`](crate::RetroPocket) will be empty for both colors
-    fn from_setup(setup: &dyn Setup, _: CastlingMode) -> Result<Self, PositionError<Self>> {
+    fn from_setup(setup: Setup, _: CastlingMode) -> Result<Self, PositionError<Self>> {
         Ok(Self {
-            board: setup.board().clone(),
-            retro_turn: !setup.turn(),
-            ep_square: setup.ep_square(),
+            board: setup.board,
+            retro_turn: !setup.turn,
+            ep_square: setup.ep_square,
             halfmoves: 0,
             pockets: RetroPockets::default(),
         })
@@ -510,10 +512,10 @@ impl From<RetroBoard> for Chess {
             .parse()
             .unwrap_or_else(|_| panic!("syntactically correct EPD: {:?}", item.epd()));
 
-        match setup.position(CastlingMode::Standard) {
+        match setup.into_position(CastlingMode::Standard) {
             Err(x) => x
                 .ignore_impossible_check()
-                .unwrap_or_else(|_| panic!("Legal Position: {}", setup)),
+                .unwrap_or_else(|_| panic!("Legal Position: {}", item.epd())),
             Ok(pos) => pos,
         }
     }
@@ -619,7 +621,7 @@ mod tests {
         assert_eq!(r.retro_turn, Black);
         assert_eq!(
             r.board,
-            Board::from_board_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR".as_bytes())
+            Board::from_ascii_board_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR".as_bytes())
                 .unwrap()
         );
         assert_eq!(r.pockets, RetroPockets::default());
@@ -631,10 +633,11 @@ mod tests {
         let r =
             RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
                 .expect("Retroboard because fen is legal");
-        let fen: Fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-            .parse()
-            .unwrap();
-        let r_setup = RetroBoard::from_setup(&fen, CastlingMode::Standard).unwrap();
+        let setup: Setup = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+            .parse::<Fen>()
+            .unwrap()
+            .into_setup();
+        let r_setup = RetroBoard::from_setup(setup, CastlingMode::Standard).unwrap();
         assert_eq!(r, r_setup);
     }
 
@@ -1039,7 +1042,7 @@ mod tests {
 
     fn try_from(item: RetroBoard) -> Option<Chess> {
         let setup: Fen = item.epd().parse().ok()?;
-        match setup.position(CastlingMode::Standard) {
+        match setup.into_position(CastlingMode::Standard) {
             Err(x) => x.ignore_impossible_check().ok(),
             ok => ok.ok(),
         }

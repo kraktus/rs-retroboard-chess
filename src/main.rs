@@ -42,7 +42,7 @@ fn _shakmaty(fen: &str) {
     let pos: Chess = fen
         .parse::<Fen>()
         .unwrap()
-        .position(CastlingMode::Standard)
+        .into_position(CastlingMode::Standard)
         .unwrap();
     let shakmaty_start = Instant::now();
     let shakmaty_depth = 6;
