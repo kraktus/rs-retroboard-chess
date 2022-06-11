@@ -1,8 +1,13 @@
 # Changelog for retroboard
 
+## v0.2.3
+
+- Update shamkaty to `v0.21.1`
+- Use `shakmaty::relative_shift`
+
 ## v0.2.2
 
-- Update shamkaty to `v0.21`
+- Update shamkaty to `v0.21.0`
 - Implement `Copy`, `fmt::Display` and `std::error::Error` for `ParseRetroPocketError`.
 
 ## v0.2.1

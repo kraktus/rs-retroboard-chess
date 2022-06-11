@@ -380,9 +380,9 @@ impl RetroBoard {
             let ep_pawns = self.our(Role::Pawn)
                 & self.retro_turn.relative_rank(Rank::Sixth)
                 & (!(self.occupied() & self.retro_turn.relative_rank(Rank::Fifth)))
-                    .relative_shift(self.retro_turn, 8)
+                    .shift(self.retro_turn.fold_wb(8, -8))
                 & (!(self.occupied() & self.retro_turn.relative_rank(Rank::Seventh)))
-                    .relative_shift(!self.retro_turn, 8);
+                    .shift(self.retro_turn.fold_wb(-8, 8));
 
             for from in ep_pawns {
                 for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() & target
@@ -402,9 +402,9 @@ impl RetroBoard {
         }
 
         let single_moves =
-            self.our(Role::Pawn).relative_shift(!self.retro_turn, 8) & !self.occupied();
+            self.our(Role::Pawn).shift(self.retro_turn.fold_wb(-8, 8)) & !self.occupied();
 
-        let double_moves = single_moves.relative_shift(!self.retro_turn, 8)
+        let double_moves = single_moves.shift(self.retro_turn.fold_wb(-8, 8))
             & self.retro_turn.relative_rank(Rank::Second)
             & !self.occupied();
 
@@ -1003,7 +1003,8 @@ mod tests {
         double_check_pawns, "8/8/4k3/5P2/8/8/nn2R3/Kn6 b - - 0 1","", "PNBRQ", "legal", "Pf5e4 Nf5e4 Bf5e4 Rf5e4 Qf5e4",
         triple_check, "8/1R1k2R1/8/8/8/3Q4/8/3K4 b - - 0 1","1PNQRB", "PNBRQ", "legal", "", // Works fine but illegal position according to shakmaty, so disabled the relevant flag
         en_passant_legal, "1k6/8/4P3/8/8/8/nn6/Kn6 b - - 0 1","", "P", "legal", "e6e5 Pe6d5 Pe6f5 Ee6d5 Ee6f5",
-        no_en_passant_sq_blocked_legal, "4k1b1/8/4P3/4p3/8/n7/Kn6/nn6 b - - 0 1","", "P", "legal", "Pe6d5 Pe6f5 a2b3 Pa2b3",
+        no_en_passant_sq_blocked_above_legal, "4k1b1/8/4P3/4p3/8/n7/Kn6/nn6 b - - 0 1","", "P", "legal", "Pe6d5 Pe6f5 a2b3 Pa2b3",
+        no_en_passant_sq_blocked_below_legal, "4k1b1/4p3/4P3/8/8/n7/Kn6/nn6 b - - 0 1","", "P", "legal", "Pe6d5 Pe6f5 a2b3 Pa2b3 e6e5",
         no_en_passant_opposite_check, "3k4/8/5P1n/6B1/5n1n/8/nn6/Kn6 b - - 0 1","", "P", "legal", "Pf6e5",
         en_passant_double_check, "8/4k3/5P2/8/8/8/nn2R3/Kn6 b - - 0 1","", "P", "legal", "Ef6e5 Pf6e5",
     }

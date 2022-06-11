@@ -18,7 +18,7 @@ categories = ["games", "game-engines"]
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-shakmaty = "0.21"
+shakmaty = "0.21.1"
 regex = "1.5"
 lazy_static = "1.4"
 arrayvec = "0.7"
