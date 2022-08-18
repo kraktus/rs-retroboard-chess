@@ -13,3 +13,8 @@ pub use crate::retroboard::RetroBoard;
 
 mod retropocket;
 pub use crate::retropocket::{ParseRetroPocketError, RetroPocket, RetroPockets};
+
+/// Using the re-exported version of shakmaty will ensure no version clashes
+pub mod shakmaty {
+    pub use shakmaty::*;
+}

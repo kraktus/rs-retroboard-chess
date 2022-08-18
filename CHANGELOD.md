@@ -1,18 +1,23 @@
 # Changelog for retroboard
 
+## To be added
+
+- Update shakmaty to `v0.21.3`
+- Re-export `shakmaty` to avoid version collision clash
+
 ## v0.2.3
 
-- Update shamkaty to `v0.21.1`
+- Update shakmaty to `v0.21.1`
 - Use `shakmaty::relative_shift`
 
 ## v0.2.2
 
-- Update shamkaty to `v0.21.0`
+- Update shakmaty to `v0.21.0`
 - Implement `Copy`, `fmt::Display` and `std::error::Error` for `ParseRetroPocketError`.
 
 ## v0.2.1
 
-- Update shamkaty to `v0.20.3`
+- Update shakmaty to `v0.20.3`
 - Add `RetroBoard::flip_vertical`, `RetroBoard::flip_horizontal`, `RetroBoard::flip_diagonal`, `RetroBoard::flip_anti_diagonal`, `RetroBoard::rotate_90`, `RetroBoard::rotate_180`, `RetroBoard::rotate_270`, following their addition to `shakmaty::Board`.
 
 ## v0.2.0
