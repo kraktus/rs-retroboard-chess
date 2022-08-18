@@ -9,7 +9,7 @@ mod unmove;
 pub use crate::unmove::{MoveKind, UnMove, UnMoveList};
 
 mod retroboard;
-pub use crate::retroboard::RetroBoard;
+pub use crate::retroboard::{perft, RetroBoard};
 
 mod retropocket;
 pub use crate::retropocket::{ParseRetroPocketError, RetroPocket, RetroPockets};
