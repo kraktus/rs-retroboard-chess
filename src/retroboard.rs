@@ -6,7 +6,7 @@ use std::{
 
 use shakmaty::{
     attacks,
-    fen::{Fen, ParseFenError},
+    fen::ParseFenError,
     Bitboard, Board, CastlingMode, Chess, Color,
     Color::{Black, White},
     FromSetup, Piece, PositionError, Rank, Role, Setup, Square,
@@ -504,20 +504,30 @@ impl FromSetup for RetroBoard {
     }
 }
 
-/// Consider valid positions with too many/impossible checkers (unreachable positions)
-impl From<RetroBoard> for Chess {
-    fn from(item: RetroBoard) -> Self {
-        let setup: Fen = item
-            .epd()
-            .parse()
-            .unwrap_or_else(|_| panic!("syntactically correct EPD: {:?}", item.epd()));
-
-        match setup.into_position(CastlingMode::Standard) {
-            Err(x) => x
-                .ignore_impossible_check()
-                .unwrap_or_else(|_| panic!("Legal Position: {}", item.epd())),
-            Ok(pos) => pos,
+impl From<RetroBoard> for Setup {
+    /// Warning: halfmoves and fullmoves are respectively set to 0 and 1
+    fn from(rboard: RetroBoard) -> Self {
+        Setup {
+            board: rboard.board,
+            promoted: Bitboard::EMPTY,
+            pockets: None,
+            turn: !rboard.retro_turn,
+            castling_rights: Bitboard::EMPTY,
+            ep_square: rboard.ep_square,
+            remaining_checks: None,
+            halfmoves: 0,
+            fullmoves: std::num::NonZeroU32::new(1).unwrap(),
         }
+    }
+}
+
+/// Consider valid positions with too many/impossible checkers (unreachable positions)
+/// Warning: halfmoves and fullmoves are respectively set to 0 and 1
+impl From<RetroBoard> for Chess {
+    fn from(rboard: RetroBoard) -> Self {
+        Chess::from_setup(Setup::from(rboard), CastlingMode::Standard)
+            .or_else(|x| x.ignore_impossible_check())
+            .expect("Illegal position")
     }
 }
 
@@ -610,7 +620,7 @@ mod tests {
 
     use indoc::indoc;
     use paste::paste;
-    use shakmaty::{uci::Uci, Position};
+    use shakmaty::{fen::Fen, uci::Uci, Position};
 
     use super::*;
 
@@ -1077,12 +1087,12 @@ mod tests {
         }
     }
 
-    fn try_from(item: RetroBoard) -> Option<Chess> {
-        let setup: Fen = item.epd().parse().ok()?;
-        match setup.into_position(CastlingMode::Standard) {
-            Err(x) => x.ignore_impossible_check().ok(),
-            ok => ok.ok(),
-        }
+    // same as Chess::from(RetroBoard) but not panicking if not valid position
+    // Note that if a `RetroBoard` validely contains an invalid `Chess` position it is a bug
+    fn try_from(rboard: RetroBoard) -> Option<Chess> {
+        Chess::from_setup(Setup::from(rboard), CastlingMode::Standard)
+            .or_else(|x| x.ignore_impossible_check())
+            .ok()
     }
 
     // does not take into account internal positions, contrary to `test_final_unmoves`
