@@ -26,3 +26,8 @@ arrayvec = "0.7"
 [dev-dependencies]
 indoc = "1.0.2"
 paste = "1.0.6"
+criterion = "0.3"
+
+[[bench]]
+name = "bench"
+harness = false

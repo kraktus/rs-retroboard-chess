@@ -1134,9 +1134,15 @@ mod tests {
             } else {
                 RetroBoard::new(fen, white_p, black_p).expect("Valid retroboard")
             };
-            assert_eq!(perft_debug(r.clone(), 0), Some(perft(&r, 0)));
-            assert_eq!(perft_debug(r.clone(), 1), Some(perft(&r, 1)));
-            assert_eq!(perft_debug(r.clone(), 2), Some(perft(&r, 2)));
+            assert!(
+                perft_debug(r.clone(), 0) == Some(perft(&r, 0)) && Some(perft(&r, 0)) == Some(1)
+            );
+            assert!(
+                perft_debug(r.clone(), 1) == Some(perft(&r, 1)) && Some(perft(&r, 1)) == Some(24)
+            );
+            assert!(
+                perft_debug(r.clone(), 2) == Some(perft(&r, 2)) && Some(perft(&r, 2)) == Some(3951)
+            );
         }
     }
 }
