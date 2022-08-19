@@ -334,7 +334,7 @@ impl RetroBoard {
             },
             self.ep_square.map_or_else(
                 || "-".to_string(),
-                |sq| format! {"{:?}", sq}.to_ascii_lowercase()
+                |sq| format!("{sq:?}").to_ascii_lowercase()
             )
         )
     }

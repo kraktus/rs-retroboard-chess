@@ -2,6 +2,9 @@
 
 ## To be added
 
+## v0.2.4
+
+- Optimise `From<RetroBoard> for Chess` (-91% runtime)
 - Update shakmaty to `v0.21.3`
 - Re-export `shakmaty` to avoid version collision clash
 
