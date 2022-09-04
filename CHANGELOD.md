@@ -2,6 +2,8 @@
 
 ## To be added
 
+- Implement `fmt::Display` for `RetroBoard`
+
 ## v0.2.4
 
 - Optimise `From<RetroBoard> for Chess` (-91% runtime)

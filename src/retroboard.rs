@@ -491,6 +491,12 @@ impl fmt::Debug for RetroBoard {
     }
 }
 
+impl fmt::Display for RetroBoard {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        <Self as fmt::Debug>::fmt(self, f)
+    }
+}
+
 impl FromSetup for RetroBoard {
     /// [`RetroPocket`](crate::RetroPocket) will be empty for both colors
     fn from_setup(setup: Setup, _: CastlingMode) -> Result<Self, PositionError<Self>> {
