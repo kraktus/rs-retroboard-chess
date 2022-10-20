@@ -1,6 +1,6 @@
 [package]
 name = "retroboard"
-version = "0.2.4"
+version = "0.2.5"
 # publish = false # Comment this line out before publishing
 authors = ["Kraktus"]
 description = "A chess retrograde move generator, suitable for endgame tablebase generation"
@@ -18,7 +18,7 @@ categories = ["games", "game-engines"]
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-shakmaty = "0.21.3"
+shakmaty = "0.22"
 regex = "1.5"
 lazy_static = "1.4"
 arrayvec = "0.7"

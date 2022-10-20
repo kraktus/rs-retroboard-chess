@@ -2,7 +2,10 @@
 
 ## To be added
 
+## v0.2.5
+
 - Implement `fmt::Display` for `RetroBoard`
+- Update shakmaty to `v0.22`
 
 ## v0.2.4
 
