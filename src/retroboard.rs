@@ -18,7 +18,7 @@ use crate::{
 };
 
 /// A [`shakmaty::Board`] where [`Unmove`](crate::UnMove) are played and all legal [`Unmove`](crate::UnMove) can be generated.
-/// It is the user responsability to ensure that position is legal. This does include unreachable positions, like [this position](https://lichess.org/editor/3k4/2B1B3/8/8/8/8/5N2/3K4_b_-_-_0_1).
+/// It is the user responsability to ensure that position is legal. Unreachable positions are considered legal, for example [this position](https://lichess.org/editor/3k4/2B1B3/8/8/8/8/5N2/3K4_b_-_-_0_1).
 #[derive(Clone)] // Copy?
 pub struct RetroBoard {
     board: Board,
