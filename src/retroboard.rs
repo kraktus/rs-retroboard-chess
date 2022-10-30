@@ -535,7 +535,7 @@ impl From<RetroBoard> for Chess {
     /// [`Chess::halfmoves`] and [`Chess::fullmoves`] are respectively set to 0 and 1
     fn from(rboard: RetroBoard) -> Self {
         Chess::from_setup(Setup::from(rboard), CastlingMode::Standard)
-            .or_else(shakmaty::PositionError::ignore_impossible_check)
+            .or_else(PositionError::ignore_impossible_check)
             .expect("Illegal position")
     }
 }
@@ -1140,7 +1140,7 @@ mod tests {
     // Note that if a `RetroBoard` validely contains an invalid `Chess` position it is a bug
     fn try_from(rboard: RetroBoard) -> Option<Chess> {
         Chess::from_setup(Setup::from(rboard), CastlingMode::Standard)
-            .or_else(shakmaty::PositionError::ignore_impossible_check)
+            .or_else(PositionError::ignore_impossible_check)
             .ok()
     }
 
