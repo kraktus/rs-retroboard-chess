@@ -9,7 +9,7 @@ use shakmaty::{
     fen::ParseFenError,
     Bitboard, Board, CastlingMode, Chess, Color,
     Color::{Black, White},
-    FromSetup, Piece, PositionError, Rank, Role, Setup, Square,
+    FromSetup, Piece, Position, PositionError, Rank, Role, Setup, Square,
 };
 
 use crate::{
@@ -18,7 +18,7 @@ use crate::{
 };
 
 /// A [`shakmaty::Board`] where [`Unmove`](crate::UnMove) are played and all legal [`Unmove`](crate::UnMove) can be generated.
-/// At every time the position must be legal. This does include unreachable positions, like [this position](https://lichess.org/editor/3k4/2B1B3/8/8/8/8/5N2/3K4_b_-_-_0_1).
+/// It is the user responsability to ensure that position is legal. This does include unreachable positions, like [this position](https://lichess.org/editor/3k4/2B1B3/8/8/8/8/5N2/3K4_b_-_-_0_1).
 #[derive(Clone)] // Copy?
 pub struct RetroBoard {
     board: Board,
@@ -499,6 +499,8 @@ impl fmt::Display for RetroBoard {
 
 impl FromSetup for RetroBoard {
     /// [`RetroPocket`](crate::RetroPocket) will be empty for both colors
+    /// # Warning
+    /// No legality check is done, and the behaviour of [`RetroBoard`] is undefined for illegal positions
     fn from_setup(setup: Setup, _: CastlingMode) -> Result<Self, PositionError<Self>> {
         Ok(Self {
             board: setup.board,
@@ -511,7 +513,8 @@ impl FromSetup for RetroBoard {
 }
 
 impl From<RetroBoard> for Setup {
-    /// Warning: halfmoves and fullmoves are respectively set to 0 and 1
+    /// [`Setup::halfmoves`] and [`Setup::fullmoves`] are respectively set to 0 and 1
+    /// [`Setup::castling_rights`] is empty
     fn from(rboard: RetroBoard) -> Self {
         Setup {
             board: rboard.board,
@@ -527,13 +530,27 @@ impl From<RetroBoard> for Setup {
     }
 }
 
-/// Consider valid positions with too many/impossible checkers (unreachable positions)
-/// Warning: halfmoves and fullmoves are respectively set to 0 and 1
 impl From<RetroBoard> for Chess {
+    /// Consider valid positions with too many/impossible checkers (unreachable positions)
+    /// [`Chess::halfmoves`] and [`Chess::fullmoves`] are respectively set to 0 and 1
     fn from(rboard: RetroBoard) -> Self {
         Chess::from_setup(Setup::from(rboard), CastlingMode::Standard)
             .or_else(|x| x.ignore_impossible_check())
             .expect("Illegal position")
+    }
+}
+
+impl From<Chess> for RetroBoard {
+    /// [`RetroBoard::halfmoves`] is set to 0, and [`RetroPocket`](crate::RetroPocket) will be empty for both colors
+    fn from(chess: Chess) -> Self {
+        // when converting from a position, the en-passant square should always be set no matter
+        // if the capture was possible in the `chess` position, because it tells to the retroboard
+        // that the last move was forcily the pawn double pushing
+        Self::from_setup(
+            chess.into_setup(shakmaty::EnPassantMode::Always),
+            CastlingMode::Standard,
+        )
+        .expect("Setup -> RetroBoard should be infaillible")
     }
 }
 
@@ -621,7 +638,6 @@ pub fn perft(r: &RetroBoard, depth: u32) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    // use pretty_assertions::{assert_eq, assert_ne};
     use std::collections::HashSet;
 
     use indoc::indoc;
@@ -691,6 +707,32 @@ mod tests {
             .into_setup();
         let r_setup = RetroBoard::from_setup(setup, CastlingMode::Standard).unwrap();
         assert_eq!(r, r_setup);
+    }
+
+    #[test]
+    fn test_from_chess() {
+        let r =
+            RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+                .expect("Retroboard because fen is legal");
+        let setup: Setup = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+            .parse::<Fen>()
+            .unwrap()
+            .into_setup();
+        let chess: Chess = setup.position(CastlingMode::Standard).unwrap();
+        assert_eq!(r, RetroBoard::from(chess));
+    }
+
+    #[test]
+    fn test_to_chess() {
+        // castling rights are lost
+        let r = RetroBoard::new_no_pockets("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1")
+            .expect("Retroboard because fen is legal");
+        let setup: Setup = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1"
+            .parse::<Fen>()
+            .unwrap()
+            .into_setup();
+        let chess: Chess = setup.position(CastlingMode::Standard).unwrap();
+        assert_eq!(Chess::from(r), chess);
     }
 
     #[test]

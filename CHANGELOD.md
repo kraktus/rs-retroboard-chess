@@ -2,6 +2,10 @@
 
 ## To be added
 
+## v0.2.6
+
+- Implement `From<Chess> for RetroBoard`
+
 ## v0.2.5
 
 - Implement `fmt::Display` for `RetroBoard`
