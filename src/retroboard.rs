@@ -29,13 +29,11 @@ pub struct RetroBoard {
 }
 
 impl RetroBoard {
-    #[must_use]
     /// Returns a new [`RetroBoard`] with empty [`RetroPocket`](crate::RetroPocket) for both colors.
     pub fn new_no_pockets(fen: &str) -> Result<Self, ParseFenError> {
         Self::new(fen, "", "")
     }
 
-    #[must_use]
     /// Returns a new [`RetroBoard`] with defined [`RetroPocket`](crate::RetroPocket), see [`RetroPocket::from_str`](crate::RetroPocket) documentation
     /// to see which string format is expected.
     /// # Examples
