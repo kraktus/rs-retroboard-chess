@@ -116,7 +116,7 @@ impl FromStr for RetroPocket {
         let mut queen: u8 = 0;
         let mut unpromotion: Option<u8> = None;
         for c in s.chars() {
-            if c.is_digit(10) {
+            if c.is_ascii_digit() {
                 // unpromotion
                 match unpromotion {
                     Some(_) => return Err(ParseRetroPocketError),

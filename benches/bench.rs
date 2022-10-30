@@ -12,7 +12,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| assert_eq!(perft(black_box(&rboard), 2), 3951))
     });
     c.bench_function("chess from rboard", move |b| {
-        b.iter_batched(|| rboard.clone(), |r| Chess::from(r), BatchSize::SmallInput)
+        b.iter_batched(|| rboard.clone(), Chess::from, BatchSize::SmallInput)
     });
 }
 

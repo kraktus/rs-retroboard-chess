@@ -53,7 +53,7 @@ impl RetroBoard {
         }?;
         let board = Board::from_ascii_board_fen(
             fen_vec
-                .get(0)
+                .first()
                 .ok_or(ParseFenError::InvalidBoard)?
                 .as_bytes(),
         )?;
@@ -535,7 +535,7 @@ impl From<RetroBoard> for Chess {
     /// [`Chess::halfmoves`] and [`Chess::fullmoves`] are respectively set to 0 and 1
     fn from(rboard: RetroBoard) -> Self {
         Chess::from_setup(Setup::from(rboard), CastlingMode::Standard)
-            .or_else(|x| x.ignore_impossible_check())
+            .or_else(shakmaty::PositionError::ignore_impossible_check)
             .expect("Illegal position")
     }
 }
@@ -615,6 +615,7 @@ fn closest_further_square(bb: Bitboard, of: Square) -> (Square, Square) {
 /// depths. The simple recursive algorithm can also overflow the stack at
 /// high depths, but this will only come into consideration in the rare case
 /// that high depths are feasible at all.
+#[must_use]
 pub fn perft(r: &RetroBoard, depth: u32) -> u64 {
     if depth < 1 {
         1
@@ -1139,7 +1140,7 @@ mod tests {
     // Note that if a `RetroBoard` validely contains an invalid `Chess` position it is a bug
     fn try_from(rboard: RetroBoard) -> Option<Chess> {
         Chess::from_setup(Setup::from(rboard), CastlingMode::Standard)
-            .or_else(|x| x.ignore_impossible_check())
+            .or_else(shakmaty::PositionError::ignore_impossible_check)
             .ok()
     }
 
