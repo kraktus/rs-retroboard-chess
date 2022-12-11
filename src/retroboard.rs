@@ -1083,6 +1083,7 @@ mod tests {
         double_check_double_knights, "4k3/2N5/5N2/8/8/8/8/3K4 b - - 0 1","legal", "",
         double_check_knight_pawn, "4k3/2N2P2/8/8/8/8/8/3K4 b - - 0 1","legal", "",
         double_check_queens, "4kQ2/8/4Q3/8/8/8/8/3K4 b - - 0 1","legal", "",
+        putting_in_double_check_rook_bishop, "8/8/8/8/8/8/BR6/k2K4 w - - 0 1","legal", "a1b1",
     }
 
     gen_tests_unmoves! {
