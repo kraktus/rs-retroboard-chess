@@ -2,6 +2,10 @@
 
 ## To be added
 
+## v0.2.7
+
+- Update shakmaty to `v0.23`
+
 ## v0.2.6
 
 - Implement `From<Chess> for RetroBoard`
