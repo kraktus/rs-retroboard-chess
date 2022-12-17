@@ -140,27 +140,16 @@ impl RetroBoard {
                     return moves;
                 };
 
-                // should work if two sliders or one slider one stepper. If there is one stepper, the slider should be the furthest piece.
-                let (from, furthest_checker) =
-                    closest_further_square(checkers, self.king_of(!self.retro_turn));
-
-                let from_piece = self.board.piece_at(from).unwrap();
-                let target = attacks::between(self.king_of(!self.retro_turn), furthest_checker);
-                // the closest piece must come into the way of the further one
-                if let Some(to) =
-                    (retro_attacks(from, from_piece, self.occupied()) & target).first()
-                {
-                    if from_piece.role != Role::Pawn {
-                        moves.push(UnMove::new(from, to, Normal));
-                    }
-                    self.gen_en_passant(&mut moves, target);
-                    self.gen_uncaptures(from, to, false, &mut moves);
-                    if Bitboard::BACKRANKS.contains(from) {
-                        self.gen_uncaptures(from, to, true, &mut moves);
-                    };
-                    // we do not check if the move itself gives check before
-                    moves.retain(|m| !self.does_unmove_give_check(m));
-                }
+                // should work if two sliders or one slider one stepper.
+                // If there is one stepper, the slider should be the furthest piece.
+                // However when the two pieces are at equal distance from the king, we must consider
+                // the stepper as the closest piece
+                let (closest_checker, furthest_checker) = closest_and_further_square(
+                    checkers,
+                    self.king_of(!self.retro_turn),
+                    self.board.steppers(),
+                );
+                self.handle_two_checkers(closest_checker, furthest_checker, &mut moves)
             }
             Ordering::Less => {
                 // 1 or no checker.
@@ -170,6 +159,31 @@ impl RetroBoard {
         }
 
         moves
+    }
+
+    fn handle_two_checkers(
+        &self,
+        closest_checker: Square,
+        furthest_checker: Square,
+        moves: &mut UnMoveList,
+    ) {
+        let from_piece = self.board.piece_at(closest_checker).unwrap();
+        let target = attacks::between(self.king_of(!self.retro_turn), furthest_checker);
+        // the closest piece must come into the way of the further one
+        if let Some(to) =
+            (retro_attacks(closest_checker, from_piece, self.occupied()) & target).first()
+        {
+            if from_piece.role != Role::Pawn {
+                moves.push(UnMove::new(closest_checker, to, Normal));
+            }
+            self.gen_en_passant(moves, target);
+            self.gen_uncaptures(closest_checker, to, false, moves);
+            if Bitboard::BACKRANKS.contains(closest_checker) {
+                self.gen_uncaptures(closest_checker, to, true, moves);
+            };
+            // we do not check if the move itself gives check before
+            moves.retain(|m| !self.does_unmove_give_check(m));
+        }
     }
 
     // from shakmaty code-source
@@ -588,13 +602,14 @@ fn show_board(board: &Board) -> String {
     board_unicode
 }
 
+// in case of equality, stepper is considered to distinguish them
 #[inline]
-fn closest_further_square(bb: Bitboard, of: Square) -> (Square, Square) {
+fn closest_and_further_square(bb: Bitboard, of: Square, steppers: Bitboard) -> (Square, Square) {
     let (sq_1, sq_2) = (bb.first().unwrap(), bb.last().unwrap());
-    if sq_1.distance(of) < sq_2.distance(of) {
-        (sq_1, sq_2)
-    } else {
-        (sq_2, sq_1)
+    match sq_1.distance(of).cmp(&sq_2.distance(of)) {
+        Ordering::Less => (sq_1, sq_2),
+        Ordering::Equal if steppers.contains(sq_1) => (sq_1, sq_2),
+        _ => (sq_2, sq_1),
     }
 }
 
@@ -762,6 +777,44 @@ mod tests {
         assert_eq!(
             retro_attacks(Square::A1, Black.knight(), Bitboard::EMPTY),
             Bitboard::EMPTY | Square::B3 | Square::C2
+        );
+    }
+
+    #[test]
+    fn test_closest_furthest_piece() {
+        assert_eq!(
+            closest_and_further_square(
+                Bitboard::EMPTY | Square::B2 | Square::H8,
+                Square::A1,
+                Bitboard::EMPTY
+            ),
+            (Square::B2, Square::H8)
+        );
+        assert_eq!(
+            closest_and_further_square(
+                Bitboard::EMPTY | Square::B2 | Square::B1,
+                Square::A1,
+                Bitboard::EMPTY | Square::B1
+            ),
+            (Square::B1, Square::B2)
+        );
+        // when there are no steppers, we do not care about the order
+        // returned if the two squares are at the same distance
+        assert_eq!(
+            closest_and_further_square(
+                Bitboard::EMPTY | Square::B2 | Square::B1,
+                Square::A1,
+                Bitboard::EMPTY
+            ),
+            (Square::B2, Square::B1)
+        );
+        assert_eq!(
+            closest_and_further_square(
+                Bitboard::EMPTY | Square::B2 | Square::B1,
+                Square::A1,
+                Bitboard::EMPTY | Square::B2
+            ),
+            (Square::B2, Square::B1)
         );
     }
 
@@ -1036,6 +1089,7 @@ mod tests {
         pseudo_en_passant, "1k6/8/4P3/8/8/8/nn6/Kn6 b - - 0 1", "", "P", "pseudo", "e6e5 Pe6d5 Pe6f5 Ee6d5 Ee6f5",
         pseudo_pre_en_passant_only, "1k6/8/8/8/4P3/8/8/K7 b - e3 0 1", "", "P", "pseudo", "e4e2",
         no_en_passant_sq_blocked, "4k1b1/8/4P3/4p3/8/n7/Kn6/nn6 b - - 0 1","", "P", "pseudo", "Pe6d5 Pe6f5 a2b3 Pa2b3",
+        pseudo_legal_double_check_bishop_knight_possible, "8/8/8/8/8/5k2/8/K3N2B b - - 0 1", "", "" ,"pseudo", "a1a2 a1b2 a1b1 e1c2 e1d3 e1g2 h1g2",
     }
 
     #[test]
@@ -1083,7 +1137,8 @@ mod tests {
         double_check_double_knights, "4k3/2N5/5N2/8/8/8/8/3K4 b - - 0 1","legal", "",
         double_check_knight_pawn, "4k3/2N2P2/8/8/8/8/8/3K4 b - - 0 1","legal", "",
         double_check_queens, "4kQ2/8/4Q3/8/8/8/8/3K4 b - - 0 1","legal", "",
-        putting_in_double_check_rook_bishop, "8/8/8/8/8/8/BR6/k2K4 w - - 0 1","legal", "a1b1",
+        double_check_rook_bishop, "8/8/8/8/8/8/BR6/k2K4 w - - 0 1","legal", "a1b1",
+        double_check_bishop_knight_possible, "8/8/8/8/8/5k2/8/K3N2B b - - 0 1", "legal", "e1g2",
     }
 
     gen_tests_unmoves! {
