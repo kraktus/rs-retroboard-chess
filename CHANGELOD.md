@@ -2,6 +2,8 @@
 
 ## To be added
 
+## v0.2.8
+
 - Fix generation of legal unmoves with two checkers (one stepper, one slider) when they are at the same distance from the king, example: `8/8/8/8/8/5k2/8/K3N2B b - - 0 1`
 
 ## v0.2.7
