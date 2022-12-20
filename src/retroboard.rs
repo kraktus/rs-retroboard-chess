@@ -149,7 +149,10 @@ impl RetroBoard {
                     self.king_of(!self.retro_turn),
                     self.board.steppers(),
                 );
-                self.handle_two_checkers(closest_checker, furthest_checker, &mut moves)
+
+                if !blockers.contains(closest_checker) {
+                    self.handle_two_checkers(closest_checker, furthest_checker, &mut moves)
+                }
             }
             Ordering::Less => {
                 // 1 or no checker.
@@ -1139,6 +1142,7 @@ mod tests {
         double_check_queens, "4kQ2/8/4Q3/8/8/8/8/3K4 b - - 0 1","legal", "",
         double_check_rook_bishop, "8/8/8/8/8/8/BR6/k2K4 w - - 0 1","legal", "a1b1",
         double_check_bishop_knight_possible, "8/8/8/8/8/5k2/8/K3N2B b - - 0 1", "legal", "e1g2",
+        double_check_rook_and_bishop_queen_aligned_impossible, "8/8/8/8/R7/2Q5/1B6/k1K5 b - -", "legal", "",
     }
 
     gen_tests_unmoves! {
