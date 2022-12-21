@@ -6,6 +6,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let white_p = "2PNBRQ";
     let black_p = "3NBRQP";
     let rboard = RetroBoard::new(fen, white_p, black_p).unwrap();
+    let chess: Chess = rboard.clone().into();
 
     c.bench_function("rboard clone", |b| b.iter(|| black_box(rboard.clone())));
     c.bench_function("perft", |b| {
@@ -13,6 +14,9 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("chess from rboard", move |b| {
         b.iter_batched(|| rboard.clone(), Chess::from, BatchSize::SmallInput)
+    });
+    c.bench_function("rboard from chess", move |b| {
+        b.iter_batched(|| chess.clone(), RetroBoard::from, BatchSize::SmallInput)
     });
 }
 
