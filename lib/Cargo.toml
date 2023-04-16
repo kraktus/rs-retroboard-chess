@@ -1,0 +1,33 @@
+[package]
+name = "retroboard"
+version = "0.2.10-dev"
+publish = false # Comment this line out before publishing
+authors = ["Kraktus"]
+description = "A chess retrograde move generator, suitable for endgame tablebase generation"
+repository = "https://github.com/kraktus/rs-retroboard-chess"
+license = "AGPL-3.0+"
+edition = "2021"
+rust-version = "1.56" # MSRV from shakmaty
+readme = "README.md"
+keywords = ["chess", "endgame", "tablebase", "retrograde"]
+categories = ["games", "game-engines"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[dependencies]
+shakmaty = "0.23"
+regex = "1.5"
+lazy_static = "1.4"
+arrayvec = "0.7"
+
+[dev-dependencies]
+indoc = "1.0.2"
+paste = "1.0.6"
+criterion = "0.4"
+
+[[bench]]
+name = "bench"
+harness = false
