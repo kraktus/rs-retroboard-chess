@@ -58,12 +58,12 @@ impl MoveKind {
     #[must_use]
     pub fn to_retro_uci(&self) -> String {
         match self {
-            Self::Normal => "".to_string(),
+            Self::Normal => String::new(),
             Self::EnPassant => "E".to_string(),
             Self::Uncapture(role) => role.upper_char().to_string(),
             Self::UnPromotion(role_opt) => {
                 "U".to_string()
-                    + &role_opt.map_or_else(|| "".to_owned(), |role| role.upper_char().to_string())
+                    + &role_opt.map_or_else(String::new, |role| role.upper_char().to_string())
             }
         }
     }
@@ -311,7 +311,7 @@ mod tests {
         for x in &["e2e4", "Pe2e4", "Ue8e7", "Ee3d4", "Qa1a2", "Ba1a2", "Nd4d5"] {
             let unmove: UnMove = UnMove::from_retro_uci(x).unwrap();
             assert_eq!(*x, &unmove.to_retro_uci());
-            assert_eq!(format!("{:?}", unmove), *x);
+            assert_eq!(format!("{unmove:?}"), *x);
         }
     }
 

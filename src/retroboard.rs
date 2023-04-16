@@ -601,7 +601,7 @@ fn retro_attacks(from: Square, p: Piece, occupied: Bitboard) -> Bitboard {
 
 #[inline]
 fn show_board(board: &Board) -> String {
-    let board_unicode: String = format!("{:?}", board).chars().map(unicode).collect();
+    let board_unicode: String = format!("{board:?}").chars().map(unicode).collect();
     board_unicode
 }
 
@@ -676,9 +676,9 @@ mod tests {
             "4PPNBBRQ",
         )
         .unwrap();
-        println!("{:?}", r);
+        println!("{r:?}");
         assert_eq!(
-            format!("{:?}", r),
+            format!("{r:?}"),
             indoc! {"
 
                 ♚ ♛ ♜ ♝ ♞ . . ♚
@@ -868,10 +868,10 @@ mod tests {
         for piece in "PNBRQ".chars() {
             let mut r =
                 RetroBoard::new("4k3/r7/8/8/8/8/8/4K3 w - - 0 1", &piece.to_string(), "").unwrap();
-            r.push(&u(&format!("{}a7a2", piece)));
+            r.push(&u(&format!("{piece}a7a2")));
             assert_eq!(
                 r,
-                RetroBoard::new_no_pockets(&format!("4k3/{}7/8/8/8/8/r7/4K3 b - - 0 1", piece))
+                RetroBoard::new_no_pockets(&format!("4k3/{piece}7/8/8/8/8/r7/4K3 b - - 0 1"))
                     .unwrap()
             )
         }
@@ -906,10 +906,10 @@ mod tests {
         for piece in "NBRQ".chars() {
             let mut r =
                 RetroBoard::new("r3k3/8/8/8/8/8/8/4K3 w - - 0 1", &piece.to_string(), "1").unwrap();
-            r.push(&u(&format!("U{}a8b7", piece)));
+            r.push(&u(&format!("U{piece}a8b7")));
             assert_eq!(
                 r,
-                RetroBoard::new_no_pockets(&format!("{}3k3/1p6/8/8/8/8/8/4K3 b - - 0 2", piece))
+                RetroBoard::new_no_pockets(&format!("{piece}3k3/1p6/8/8/8/8/8/4K3 b - - 0 2"))
                     .unwrap()
             )
         }
@@ -982,7 +982,7 @@ mod tests {
                             .char()
                             .to_string()
                     } else {
-                        "".to_string()
+                        String::new()
                     }
                 )
                 .as_bytes(),
@@ -1006,7 +1006,7 @@ mod tests {
             let mut m2_hashset: HashSet<UnMove> = HashSet::new();
             let mut m2 = UnMoveList::new();
             for x in moves.split(' ') {
-                println!("{:?}", x);
+                println!("{x:?}");
                 if !x.is_empty() {
                     m1_hashset.insert(if mirrored { u(x).mirror() } else { u(x) });
                 }
@@ -1027,10 +1027,10 @@ mod tests {
             let mut exp_not_gen = m1_hashset.clone();
             gen_not_exp.retain(|x| !m1_hashset.contains(x));
             exp_not_gen.retain(|x| !m2_hashset.contains(x));
-            println!("{:?}", r);
-            println!("Mirrored: {:?}", mirrored);
-            println!("Generated but not expected: {:?}", gen_not_exp);
-            println!("Expected but not generated: {:?}", exp_not_gen);
+            println!("{r:?}");
+            println!("Mirrored: {mirrored:?}");
+            println!("Generated but not expected: {gen_not_exp:?}");
+            println!("Expected but not generated: {exp_not_gen:?}");
             assert_eq!(m1_hashset, m2_hashset);
             for x in m2.clone() {
                 if gen_type == "legal" {
@@ -1215,10 +1215,7 @@ mod tests {
                 r2.push(&m);
                 let chess_after_unmove: Chess = match try_from(r2.clone()) {
                     None => {
-                        println!(
-                            "depth {}, Illegal pos {:?}, move leading to it {:?}",
-                            depth, r2, m
-                        );
+                        println!("depth {depth}, Illegal pos {r2:?}, move leading to it {m:?}");
                         return None;
                     }
                     Some(pos) => pos,
@@ -1226,10 +1223,7 @@ mod tests {
                 assert!(move_legal(&r, chess_after_unmove, m.clone()));
                 match perft_debug(r2.clone(), depth - 1) {
                     None => {
-                        println!(
-                            "depth {}, Illegal pos {:?}, move leading to it {:?}",
-                            depth, r2, m
-                        );
+                        println!("depth {depth}, Illegal pos {r2:?}, move leading to it {m:?}");
                         return None;
                     }
                     Some(x) => acc += x,
