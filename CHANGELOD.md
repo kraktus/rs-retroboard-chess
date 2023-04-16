@@ -2,6 +2,10 @@
 
 ## To be added
 
+## v0.2.10
+
+- Update shakmaty to `v0.24`
+
 ## v0.2.9
 
 - Fix generation of legal unmoves with two checkers when the closest check is also a blocker, for example in: `8/8/8/8/R7/2Q5/1B6/k1K5 b - -`, Ba3 is not legal because the bishop is a blocker of the queen.
