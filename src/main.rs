@@ -46,6 +46,6 @@ fn main() {
         "q7/4kr2/8/2b4n/4K3/6N1/1R1QB3/8 w - - 0 1",
     ] {
         retroboard(fen);
-        // _shakmaty(fen);
+        //_shakmaty(fen);
     }
 }
