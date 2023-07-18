@@ -24,7 +24,7 @@ lazy_static = "1.4"
 arrayvec = "0.7"
 
 [dev-dependencies]
-indoc = "1.0.2"
+indoc = "2.0.3"
 paste = "1.0.6"
 criterion = "0.4"
 
