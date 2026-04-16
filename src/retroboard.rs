@@ -207,7 +207,7 @@ impl RetroBoard {
     fn epd(&self) -> String {
         format!(
             "{} {} - {}",
-            self.board.board_fen(Bitboard::EMPTY),
+            self.board.board_fen(),
             match self.retro_turn {
                 Black => "w",
                 White => "b",
@@ -604,7 +604,7 @@ impl From<Chess> for RetroBoard {
         // if the capture was possible in the `chess` position, because it tells to the retroboard
         // that the last move was forcily the pawn double pushing
         Self::from_setup(
-            chess.into_setup(shakmaty::EnPassantMode::Always),
+            chess.to_setup(shakmaty::EnPassantMode::Always),
             CastlingMode::Standard,
         )
         .expect("Setup -> RetroBoard should be infaillible")
@@ -701,7 +701,7 @@ mod tests {
 
     use indoc::indoc;
     use paste::paste;
-    use shakmaty::{Position, fen::Fen, uci::Uci};
+    use shakmaty::{Position, fen::Fen, uci::UciMove};
 
     use super::*;
 
@@ -1011,7 +1011,7 @@ mod tests {
 
     fn move_legal(r: &RetroBoard, pos: Chess, unmove: UnMove) -> bool {
         pos.is_legal(
-            &Uci::from_ascii(
+            UciMove::from_ascii(
                 format!(
                     "{}{}{}",
                     unmove.to,

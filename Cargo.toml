@@ -21,7 +21,7 @@ codegen-units = 1
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-shakmaty = "0.24"
+shakmaty = "0.30"
 regex = "1.5"
 arrayvec = "0.7"
 
