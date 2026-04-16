@@ -22,7 +22,7 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 shakmaty = "0.30"
-regex = "1.5"
+regex = "1.12"
 arrayvec = "0.7"
 
 [dev-dependencies]
