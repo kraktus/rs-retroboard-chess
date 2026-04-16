@@ -4,6 +4,8 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+use arrayvec::ArrayVec;
+
 use shakmaty::{
     attacks,
     fen::ParseFenError,
@@ -19,7 +21,7 @@ use crate::{
 
 /// A [`shakmaty::Board`] where [`Unmove`](crate::UnMove) are played and all legal [`Unmove`](crate::UnMove) can be generated.
 /// It is the user responsability to ensure that position is legal. Unreachable positions are considered legal, for example [this position](https://lichess.org/editor/3k4/2B1B3/8/8/8/8/5N2/3K4_b_-_-_0_1).
-#[derive(Clone)] // Copy?
+#[derive(Clone)]
 pub struct RetroBoard {
     board: Board,
     retro_turn: Color,
@@ -107,154 +109,6 @@ impl RetroBoard {
         self.retro_turn = !self.retro_turn;
     }
 
-    pub fn pseudo_legal_unmoves(&self, moves: &mut UnMoveList) {
-        // then there is only move possible
-        if let Some(sq) = self.ep_square {
-            // ep square always on the third or sixth rank, so offseting is fine
-            moves.push(UnMove::new(
-                sq.offset(self.retro_turn.fold_wb(8, -8)).unwrap(), // from
-                sq.offset(self.retro_turn.fold_wb(-8, 8)).unwrap(), // to
-                Normal,
-            ))
-        } else {
-            self.gen_pieces(moves);
-            self.gen_unpromotion(moves);
-            self.gen_pawns(moves);
-            self.gen_en_passant(moves, Bitboard::FULL);
-        }
-    }
-
-    /// Generate legal unmoves, which are all the pseudo legal unmoves which do not put the opponent's king in check.
-    /// If the opponent's king is in check at the beginning of our turn, the only legal unmoves are those which stop it from being in check.
-    #[must_use]
-    pub fn legal_unmoves(&self) -> UnMoveList {
-        // supposing the opponent's king is not in check at the beginning of our retro_turn
-        let mut moves: UnMoveList = UnMoveList::new();
-        let checkers = self.checkers(!self.retro_turn);
-        let blockers = self.slider_blockers(self.us(), self.king_of(!self.retro_turn));
-        let nb_checkers = checkers.count();
-        match nb_checkers.cmp(&2) {
-            Ordering::Greater => return moves, // no unmoves possible
-            Ordering::Equal => {
-                if checkers.is_subset(self.board.steppers()) {
-                    return moves;
-                };
-
-                // should work if two sliders or one slider one stepper.
-                // If there is one stepper, the slider should be the furthest piece.
-                // However when the two pieces are at equal distance from the king, we must consider
-                // the stepper as the closest piece
-                let (closest_checker, furthest_checker) = closest_and_further_square(
-                    checkers,
-                    self.king_of(!self.retro_turn),
-                    self.board.steppers(),
-                );
-
-                if !blockers.contains(closest_checker) {
-                    self.handle_two_checkers(closest_checker, furthest_checker, &mut moves)
-                }
-            }
-            Ordering::Less => {
-                // 1 or no checker.
-                self.pseudo_legal_unmoves(&mut moves);
-                moves.retain(|m| self.is_safe(m, blockers, checkers.first()));
-            }
-        }
-
-        moves
-    }
-
-    fn handle_two_checkers(
-        &self,
-        closest_checker: Square,
-        furthest_checker: Square,
-        moves: &mut UnMoveList,
-    ) {
-        let from_piece = self.board.piece_at(closest_checker).unwrap();
-        let target = attacks::between(self.king_of(!self.retro_turn), furthest_checker);
-        // the closest piece must come into the way of the further one
-        if let Some(to) =
-            (retro_attacks(closest_checker, from_piece, self.occupied()) & target).first()
-        {
-            if from_piece.role != Role::Pawn {
-                moves.push(UnMove::new(closest_checker, to, Normal));
-            }
-            self.gen_en_passant(moves, target);
-            self.gen_uncaptures(closest_checker, to, false, moves);
-            if Bitboard::BACKRANKS.contains(closest_checker) {
-                self.gen_uncaptures(closest_checker, to, true, moves);
-            };
-            // we do not check if the move itself gives check before
-            moves.retain(|m| !self.does_unmove_give_check(m));
-        }
-    }
-
-    // from shakmaty code-source
-    fn slider_blockers(&self, our_pieces: Bitboard, king: Square) -> Bitboard {
-        let snipers = (attacks::rook_attacks(king, Bitboard(0)) & self.board.rooks_and_queens())
-            | (attacks::bishop_attacks(king, Bitboard(0)) & self.board.bishops_and_queens());
-
-        let mut blockers = Bitboard(0);
-
-        for sniper in snipers & our_pieces {
-            let b = attacks::between(king, sniper) & self.occupied();
-
-            if !b.more_than_one() {
-                blockers.add(b);
-            }
-        }
-
-        blockers
-    }
-
-    fn is_safe(&self, unmove: &UnMove, blockers: Bitboard, checker: Option<Square>) -> bool {
-        let king = self.king_of(!self.retro_turn);
-        // If we remove a blocker without letting a piece behing we'll put the king in check, so the unmove is invalid
-        if !unmove.is_uncapture()
-            && blockers.contains(unmove.from)
-            && !attacks::aligned(unmove.from, unmove.to, king)
-        {
-            return false;
-        }
-
-        // check if the unmove attack the king
-        if self.does_unmove_give_check(unmove) {
-            return false;
-        }
-
-        // no checker we can end here
-        if checker.is_none() {
-            return true;
-        }
-
-        // if the checker does not move and is not a slider, then at the end the king will still be in check
-        if self.board.steppers().contains(checker.unwrap()) && checker.unwrap() != unmove.from {
-            return false;
-        }
-        // Now we know the checker is a slider and either it moves away to a square where it does not put the king in check (we already checked if the destination square gives check, so only left to check if it is the checker)
-        // or it does not move, and then we need to check if a piece goes between it.
-        checker.unwrap() == unmove.from
-            || attacks::between(checker.unwrap(), king).contains(unmove.to)
-    }
-
-    fn does_unmove_give_check(&self, unmove: &UnMove) -> bool {
-        (attacks::attacks(
-            unmove.to,
-            if unmove.is_unpromotion() {
-                self.retro_turn.pawn()
-            } else {
-                self.board.piece_at(unmove.from).unwrap()
-            },
-            self.occupied()
-                ^ if unmove.is_uncapture() {
-                    Bitboard::EMPTY
-                } else {
-                    unmove.from.into()
-                },
-        ) & self.king_of(!self.retro_turn))
-        .any()
-    }
-
     #[inline]
     #[must_use]
     pub fn board(&self) -> &Board {
@@ -265,6 +119,18 @@ impl RetroBoard {
     #[must_use]
     pub fn retro_turn(&self) -> Color {
         self.retro_turn
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn ep_square(&self) -> Option<Square> {
+        self.ep_square
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn pockets(&self) -> &RetroPockets {
+        &self.pockets
     }
 
     #[inline]
@@ -354,15 +220,186 @@ impl RetroBoard {
         )
     }
 
+    pub fn pseudo_legal_unmoves(&self, moves: &mut UnMoveList) {
+        UnMoveGenerator::new(self).pseudo_legal_unmoves(moves)
+    }
+
+    pub fn legal_unmoves(&self) -> UnMoveList {
+        UnMoveGenerator::new(self).legal_unmoves()
+    }
+}
+
+// to cache some information about the position
+struct UnMoveGenerator<'a> {
+    r: &'a RetroBoard,
+    // cached values
+    // possible_uncaptures: ArrayVec<Role, 5>,
+}
+
+impl<'a> UnMoveGenerator<'a> {
+    pub fn new(r: &'a RetroBoard) -> Self {
+        Self { r }
+    }
+
+    pub fn pseudo_legal_unmoves(&self, moves: &mut UnMoveList) {
+        // then there is only move possible
+        if let Some(sq) = self.r.ep_square() {
+            // ep square always on the third or sixth rank, so offseting is fine
+            moves.push(UnMove::new(
+                sq.offset(self.r.retro_turn().fold_wb(8, -8)).unwrap(), // from
+                sq.offset(self.r.retro_turn().fold_wb(-8, 8)).unwrap(), // to
+                Normal,
+            ))
+        } else {
+            self.gen_pieces(moves);
+            self.gen_unpromotion(moves);
+            self.gen_pawns(moves);
+            self.gen_en_passant(moves, Bitboard::FULL);
+        }
+    }
+
+    /// Generate legal unmoves, which are all the pseudo legal unmoves which do not put the opponent's king in check.
+    /// If the opponent's king is in check at the beginning of our turn, the only legal unmoves are those which stop it from being in check.
+    #[must_use]
+    pub fn legal_unmoves(&self) -> UnMoveList {
+        // supposing the opponent's king is not in check at the beginning of our retro_turn
+        let mut moves: UnMoveList = UnMoveList::new();
+        let checkers = self.checkers(!self.r.retro_turn());
+        let blockers = self.gen_slider_blockers(self.r.us(), self.r.king_of(!self.r.retro_turn()));
+        let nb_checkers = checkers.count();
+        match nb_checkers.cmp(&2) {
+            Ordering::Greater => return moves, // no unmoves possible
+            Ordering::Equal => {
+                if checkers.is_subset(self.r.board().steppers()) {
+                    return moves;
+                };
+
+                // should work if two sliders or one slider one stepper.
+                // If there is one stepper, the slider should be the furthest piece.
+                // However when the two pieces are at equal distance from the king, we must consider
+                // the stepper as the closest piece
+                let (closest_checker, furthest_checker) = closest_and_further_square(
+                    checkers,
+                    self.r.king_of(!self.r.retro_turn()),
+                    self.r.board().steppers(),
+                );
+
+                if !blockers.contains(closest_checker) {
+                    self.gen_handle_two_checkers(closest_checker, furthest_checker, &mut moves)
+                }
+            }
+            Ordering::Less => {
+                // 1 or no checker.
+                self.pseudo_legal_unmoves(&mut moves);
+                moves.retain(|m| self.gen_is_safe(m, blockers, checkers.first()));
+            }
+        }
+
+        moves
+    }
+
+    fn gen_handle_two_checkers(
+        &self,
+        closest_checker: Square,
+        furthest_checker: Square,
+        moves: &mut UnMoveList,
+    ) {
+        let from_piece = self.r.board().piece_at(closest_checker).unwrap();
+        let target = attacks::between(self.r.king_of(!self.r.retro_turn()), furthest_checker);
+        // the closest piece must come into the way of the further one
+        if let Some(to) =
+            (retro_attacks(closest_checker, from_piece, self.r.occupied()) & target).first()
+        {
+            if from_piece.role != Role::Pawn {
+                moves.push(UnMove::new(closest_checker, to, Normal));
+            }
+            self.gen_en_passant(moves, target);
+            self.gen_uncaptures(closest_checker, to, false, moves);
+            if Bitboard::BACKRANKS.contains(closest_checker) {
+                self.gen_uncaptures(closest_checker, to, true, moves);
+            };
+            // we do not check if the move itself gives check before
+            moves.retain(|m| !self.does_unmove_give_check(m));
+        }
+    }
+
+    // from shakmaty code-source
+    fn gen_slider_blockers(&self, our_pieces: Bitboard, king: Square) -> Bitboard {
+        let snipers = (attacks::rook_attacks(king, Bitboard(0))
+            & self.r.board().rooks_and_queens())
+            | (attacks::bishop_attacks(king, Bitboard(0)) & self.r.board().bishops_and_queens());
+
+        let mut blockers = Bitboard(0);
+
+        for sniper in snipers & our_pieces {
+            let b = attacks::between(king, sniper) & self.r.occupied();
+
+            if !b.more_than_one() {
+                blockers.add(b);
+            }
+        }
+
+        blockers
+    }
+
+    fn gen_is_safe(&self, unmove: &UnMove, blockers: Bitboard, checker: Option<Square>) -> bool {
+        let king = self.r.king_of(!self.r.retro_turn());
+        // If we remove a blocker without letting a piece behing we'll put the king in check, so the unmove is invalid
+        if !unmove.is_uncapture()
+            && blockers.contains(unmove.from)
+            && !attacks::aligned(unmove.from, unmove.to, king)
+        {
+            return false;
+        }
+
+        // check if the unmove attack the king
+        if self.does_unmove_give_check(unmove) {
+            return false;
+        }
+
+        // no checker we can end here
+        if checker.is_none() {
+            return true;
+        }
+
+        // if the checker does not move and is not a slider, then at the end the king will still be in check
+        if self.r.board().steppers().contains(checker.unwrap()) && checker.unwrap() != unmove.from {
+            return false;
+        }
+        // Now we know the checker is a slider and either it moves away to a square where it does not put the king in check (we already checked if the destination square gives check, so only left to check if it is the checker)
+        // or it does not move, and then we need to check if a piece goes between it.
+        checker.unwrap() == unmove.from
+            || attacks::between(checker.unwrap(), king).contains(unmove.to)
+    }
+
+    fn does_unmove_give_check(&self, unmove: &UnMove) -> bool {
+        (attacks::attacks(
+            unmove.to,
+            if unmove.is_unpromotion() {
+                self.r.retro_turn().pawn()
+            } else {
+                self.r.board().piece_at(unmove.from).unwrap()
+            },
+            self.r.occupied()
+                ^ if unmove.is_uncapture() {
+                    Bitboard::EMPTY
+                } else {
+                    unmove.from.into()
+                },
+        ) & self.r.king_of(!self.r.retro_turn()))
+        .any()
+    }
+
     #[inline]
     fn checkers(&self, color: Color) -> Bitboard {
-        self.board
-            .attacks_to(self.king_of(color), !color, self.occupied())
+        self.r
+            .board()
+            .attacks_to(self.r.king_of(color), !color, self.r.occupied())
     }
 
     fn gen_unpromotion(&self, moves: &mut UnMoveList) {
-        if self.pockets.color(self.retro_turn).unpromotion > 0 {
-            for from in self.us() & self.retro_turn.relative_rank(Rank::Eighth) {
+        if self.r.pockets().color(self.r.retro_turn()).unpromotion > 0 {
+            for from in self.r.us() & self.r.retro_turn().relative_rank(Rank::Eighth) {
                 self.gen_unpromotion_on(from, moves);
             }
         }
@@ -370,18 +407,21 @@ impl RetroBoard {
 
     fn gen_unpromotion_on(&self, from: Square, moves: &mut UnMoveList) {
         let to = from
-            .offset(self.retro_turn.fold_wb(-8, 8))
+            .offset(self.r.retro_turn().fold_wb(-8, 8))
             .expect("We're in the eighth rank and going back so square exists");
-        if self.board.piece_at(to).is_none() {
+        if self.r.board().piece_at(to).is_none() {
             moves.push(UnMove::new(from, to, UnPromotion(None)));
         };
         self.gen_pawn_uncaptures(from, true, moves);
     }
 
     fn gen_pieces(&self, moves: &mut UnMoveList) {
-        for from in self.us() & !self.our(Role::Pawn) {
-            for to in attacks::attacks(from, self.board.piece_at(from).unwrap(), self.occupied())
-                & !self.occupied()
+        for from in self.r.us() & !self.r.our(Role::Pawn) {
+            for to in attacks::attacks(
+                from,
+                self.r.board().piece_at(from).unwrap(),
+                self.r.occupied(),
+            ) & !self.r.occupied()
             {
                 moves.push(UnMove::new(from, to, Normal));
                 self.gen_uncaptures(from, to, false, moves)
@@ -390,17 +430,18 @@ impl RetroBoard {
     }
 
     fn gen_en_passant(&self, moves: &mut UnMoveList, target: Bitboard) {
-        if self.pockets.color(!self.retro_turn).pawn > 0 {
+        if self.r.pockets().color(!self.r.retro_turn()).pawn > 0 {
             // pawns on the relative 6th rank with free space above AND below them
-            let ep_pawns = self.our(Role::Pawn)
-                & self.retro_turn.relative_rank(Rank::Sixth)
-                & (!(self.occupied() & self.retro_turn.relative_rank(Rank::Fifth)))
-                    .shift(self.retro_turn.fold_wb(8, -8))
-                & (!(self.occupied() & self.retro_turn.relative_rank(Rank::Seventh)))
-                    .shift(self.retro_turn.fold_wb(-8, 8));
+            let ep_pawns = self.r.our(Role::Pawn)
+                & self.r.retro_turn().relative_rank(Rank::Sixth)
+                & (!(self.r.occupied() & self.r.retro_turn().relative_rank(Rank::Fifth)))
+                    .shift(self.r.retro_turn().fold_wb(8, -8))
+                & (!(self.r.occupied() & self.r.retro_turn().relative_rank(Rank::Seventh)))
+                    .shift(self.r.retro_turn().fold_wb(-8, 8));
 
             for from in ep_pawns {
-                for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() & target
+                for to in
+                    attacks::pawn_attacks(!self.r.retro_turn(), from) & !self.r.occupied() & target
                 {
                     moves.push(UnMove::new(from, to, EnPassant));
                 }
@@ -410,34 +451,37 @@ impl RetroBoard {
 
     fn gen_pawns(&self, moves: &mut UnMoveList) {
         // generate pawn uncaptures
-        for from in
-            self.our(Role::Pawn) & !Bitboard::from(self.retro_turn.relative_rank(Rank::Second))
+        for from in self.r.our(Role::Pawn)
+            & !Bitboard::from(self.r.retro_turn().relative_rank(Rank::Second))
         {
             self.gen_pawn_uncaptures(from, false, moves)
         }
 
-        let single_moves =
-            self.our(Role::Pawn).shift(self.retro_turn.fold_wb(-8, 8)) & !self.occupied();
+        let single_moves = self
+            .r
+            .our(Role::Pawn)
+            .shift(self.r.retro_turn().fold_wb(-8, 8))
+            & !self.r.occupied();
 
-        let double_moves = single_moves.shift(self.retro_turn.fold_wb(-8, 8))
-            & self.retro_turn.relative_rank(Rank::Second)
-            & !self.occupied();
+        let double_moves = single_moves.shift(self.r.retro_turn().fold_wb(-8, 8))
+            & self.r.retro_turn().relative_rank(Rank::Second)
+            & !self.r.occupied();
 
         for to in single_moves & !Bitboard::BACKRANKS {
-            if let Some(from) = to.offset(self.retro_turn.fold_wb(8, -8)) {
+            if let Some(from) = to.offset(self.r.retro_turn().fold_wb(8, -8)) {
                 moves.push(UnMove::new(from, to, Normal));
             }
         }
 
         for to in double_moves {
-            if let Some(from) = to.offset(self.retro_turn.fold_wb(16, -16)) {
+            if let Some(from) = to.offset(self.r.retro_turn().fold_wb(16, -16)) {
                 moves.push(UnMove::new(from, to, Normal));
             }
         }
     }
 
     fn gen_pawn_uncaptures(&self, from: Square, unpromotion: bool, moves: &mut UnMoveList) {
-        for to in attacks::pawn_attacks(!self.retro_turn, from) & !self.occupied() {
+        for to in attacks::pawn_attacks(!self.r.retro_turn(), from) & !self.r.occupied() {
             self.gen_uncaptures(from, to, unpromotion, moves)
         }
     }
@@ -445,18 +489,19 @@ impl RetroBoard {
     // TODO refractor uncapture to uncapture_on, dealing with attacks, unpromotion etc.
     fn gen_uncaptures(&self, from: Square, to: Square, unpromotion: bool, moves: &mut UnMoveList) {
         for unmove in self
-            .pockets
-            .color(!self.retro_turn)
-            .clone()
-            .into_iter()
+            .r
+            .pockets()
+            .color(!self.r.retro_turn())
+            .possible_uncaptures()
+            .iter()
             .map(|r| {
                 UnMove::new(
                     from,
                     to,
                     if unpromotion {
-                        UnPromotion(Some(r))
+                        UnPromotion(Some(*r))
                     } else {
-                        Uncapture(r)
+                        Uncapture(*r)
                     },
                 )
             })
@@ -1011,12 +1056,13 @@ mod tests {
                     m1_hashset.insert(if mirrored { u(x).mirror() } else { u(x) });
                 }
             }
+            let unmove_generator = UnMoveGenerator::new(&r);
             match gen_type {
-                "pawn" => r.gen_pawns(&mut m2),
-                "piece" => r.gen_pieces(&mut m2),
-                "unpromotion" => r.gen_unpromotion(&mut m2),
-                "pseudo" => r.pseudo_legal_unmoves(&mut m2),
-                "legal" => m2 = r.legal_unmoves(),
+                "pawn" => unmove_generator.gen_pawns(&mut m2),
+                "piece" => unmove_generator.gen_pieces(&mut m2),
+                "unpromotion" => unmove_generator.gen_unpromotion(&mut m2),
+                "pseudo" => unmove_generator.pseudo_legal_unmoves(&mut m2),
+                "legal" => m2 = unmove_generator.legal_unmoves(),
                 _ => panic!("Choose proper generation method"),
             };
             for x in m2.clone() {

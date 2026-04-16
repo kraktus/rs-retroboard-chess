@@ -59,6 +59,29 @@ impl RetroPocket {
             _ => panic!("Attempt to decrement a pocket role whose value is already 0"),
         }
     }
+
+    /// Returns an [`ArrayVec`](arrayvec::ArrayVec) containing the pieces that can be uncaptured,
+    /// in the order of their value (Pawn, Knight, Bishop, Rook, Queen).
+    // TODO FIXME probably more efficient to use bitflag here
+    pub fn possible_uncaptures(&self) -> ArrayVec<Role, 5> {
+        let mut v = ArrayVec::new();
+        if self.pawn > 0 {
+            v.push(Role::Pawn)
+        };
+        if self.knight > 0 {
+            v.push(Role::Knight)
+        };
+        if self.bishop > 0 {
+            v.push(Role::Bishop)
+        };
+        if self.rook > 0 {
+            v.push(Role::Rook)
+        };
+        if self.queen > 0 {
+            v.push(Role::Queen)
+        };
+        v
+    }
 }
 
 impl Default for RetroPocket {
@@ -147,31 +170,6 @@ impl FromStr for RetroPocket {
             queen,
             unpromotion: unpromotion.unwrap_or(0),
         })
-    }
-}
-
-impl IntoIterator for RetroPocket {
-    type Item = Role;
-    type IntoIter = arrayvec::IntoIter<Self::Item, 5>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        let mut v: ArrayVec<Role, 5> = ArrayVec::new();
-        if self.pawn > 0 {
-            v.push(Role::Pawn)
-        };
-        if self.knight > 0 {
-            v.push(Role::Knight)
-        };
-        if self.bishop > 0 {
-            v.push(Role::Bishop)
-        };
-        if self.rook > 0 {
-            v.push(Role::Rook)
-        };
-        if self.queen > 0 {
-            v.push(Role::Queen)
-        };
-        v.into_iter()
     }
 }
 
@@ -268,11 +266,11 @@ mod tests {
         for conf in &["PNB", "BRQ", "PNBRQ"] {
             // need to be in the right order
             let r = RetroPocket::from_str(conf).unwrap();
-            println!("{:?}", r.clone().into_iter());
+            println!("{:?}", r.possible_uncaptures());
             for (x, y) in conf
                 .chars()
                 .map(|c| Role::from_char(c).unwrap())
-                .zip(r.into_iter())
+                .zip(r.possible_uncaptures())
             {
                 assert_eq!(x, y)
             }
