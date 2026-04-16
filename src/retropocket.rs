@@ -29,7 +29,7 @@ impl fmt::Display for ParseRetroPocketError {
 impl Error for ParseRetroPocketError {}
 
 /// A [`RetroBoard`](crate::RetroBoard) pocket with a counter for each piece type.
-/// It stores the pieces than can be uncaptured by each color.    
+/// It stores the pieces than can be uncaptured by each color.
 /// `self.unpromotion` is the number of pieces than can unpromote into a pawn.
 /// By default it is set to 0
 #[derive(Eq, PartialEq, Clone, Hash)]
@@ -63,23 +63,24 @@ impl RetroPocket {
     /// Returns an [`ArrayVec`](arrayvec::ArrayVec) containing the pieces that can be uncaptured,
     /// in the order of their value (Pawn, Knight, Bishop, Rook, Queen).
     // TODO FIXME probably more efficient to use bitflag here
+    #[must_use]
     pub fn possible_uncaptures(&self) -> ArrayVec<Role, 5> {
         let mut v = ArrayVec::new();
         if self.pawn > 0 {
             v.push(Role::Pawn)
-        };
+        }
         if self.knight > 0 {
             v.push(Role::Knight)
-        };
+        }
         if self.bishop > 0 {
             v.push(Role::Bishop)
-        };
+        }
         if self.rook > 0 {
             v.push(Role::Rook)
-        };
+        }
         if self.queen > 0 {
             v.push(Role::Queen)
-        };
+        }
         v
     }
 }

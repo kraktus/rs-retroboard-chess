@@ -123,7 +123,6 @@ impl UnMove {
     /// assert!(en_passant.is_en_passant());
     /// assert!(!en_passant.is_unpromotion());
     /// ```
-
     #[allow(clippy::doc_markdown)]
     pub fn from_retro_uci(retro_uci: &str) -> Result<UnMove, ParseRetroUciError> {
         lazy_static! {

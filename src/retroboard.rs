@@ -89,7 +89,7 @@ impl RetroBoard {
                 },
             );
             self.pockets.color_mut(!self.retro_turn).decr(role);
-        };
+        }
         if m.is_unpromotion() {
             self.halfmoves = 0;
             self.board.set_piece_at(
@@ -102,7 +102,7 @@ impl RetroBoard {
             self.pockets.color_mut(self.retro_turn).unpromotion -= 1;
         } else {
             self.board.set_piece_at(m.to, moved_piece);
-        };
+        }
         if m.is_en_passant() {
             self.ep_square = Some(m.from);
         }
@@ -224,6 +224,7 @@ impl RetroBoard {
         UnMoveGenerator::new(self).pseudo_legal_unmoves(moves)
     }
 
+    #[must_use]
     pub fn legal_unmoves(&self) -> UnMoveList {
         UnMoveGenerator::new(self).legal_unmoves()
     }
@@ -276,7 +277,7 @@ impl<'a> UnMoveGenerator<'a> {
             Ordering::Equal => {
                 if checkers.is_subset(self.r.board().steppers()) {
                     return moves;
-                };
+                }
 
                 // should work if two sliders or one slider one stepper.
                 // If there is one stepper, the slider should be the furthest piece.
@@ -321,7 +322,7 @@ impl<'a> UnMoveGenerator<'a> {
             self.gen_uncaptures(closest_checker, to, false, moves);
             if Bitboard::BACKRANKS.contains(closest_checker) {
                 self.gen_uncaptures(closest_checker, to, true, moves);
-            };
+            }
             // we do not check if the move itself gives check before
             moves.retain(|m| !self.does_unmove_give_check(m));
         }
@@ -415,7 +416,7 @@ impl<'a> UnMoveGenerator<'a> {
             .expect("We're in the eighth rank and going back so square exists");
         if self.r.board().piece_at(to).is_none() {
             moves.push(UnMove::new(from, to, UnPromotion(None)));
-        };
+        }
         self.gen_pawn_uncaptures(from, true, moves);
     }
 
