@@ -7,11 +7,10 @@ use std::{
 use arrayvec::ArrayVec;
 
 use shakmaty::{
-    attacks,
-    fen::ParseFenError,
     Bitboard, Board, CastlingMode, Chess, Color,
     Color::{Black, White},
-    FromSetup, Piece, Position, PositionError, Rank, Role, Setup, Square,
+    FromSetup, Piece, Position, PositionError, Rank, Role, Setup, Square, attacks,
+    fen::ParseFenError,
 };
 
 use crate::{
@@ -702,7 +701,7 @@ mod tests {
 
     use indoc::indoc;
     use paste::paste;
-    use shakmaty::{fen::Fen, uci::Uci, Position};
+    use shakmaty::{Position, fen::Fen, uci::Uci};
 
     use super::*;
 

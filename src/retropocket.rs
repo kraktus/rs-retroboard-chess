@@ -3,10 +3,10 @@ use std::{error::Error, fmt, fmt::Write, str::FromStr};
 use arrayvec::ArrayVec;
 
 use shakmaty::{
-    fen::ParseFenError,
     Color,
     Color::{Black, White},
     Role,
+    fen::ParseFenError,
 };
 
 /// Error when parsing an invalid retro UCI.

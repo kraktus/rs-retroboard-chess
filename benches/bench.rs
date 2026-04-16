@@ -1,5 +1,5 @@
-use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
-use retroboard::{perft, shakmaty::Chess, RetroBoard};
+use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
+use retroboard::{RetroBoard, perft, shakmaty::Chess};
 use std::hint::black_box;
 
 pub fn criterion_benchmark(c: &mut Criterion) {

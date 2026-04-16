@@ -1,7 +1,7 @@
 use std::time::Instant;
 
-use retroboard::shakmaty::{fen::Fen, perft as shakmaty_perft, CastlingMode, Chess};
-use retroboard::{perft, RetroBoard};
+use retroboard::shakmaty::{CastlingMode, Chess, fen::Fen, perft as shakmaty_perft};
+use retroboard::{RetroBoard, perft};
 
 fn _shakmaty(fen: &str) {
     let pos: Chess = fen
