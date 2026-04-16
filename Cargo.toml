@@ -30,7 +30,7 @@ arrayvec = "0.7"
 [dev-dependencies]
 indoc = "1.0.2"
 paste = "1.0.6"
-criterion = "0.4"
+criterion = "0.8"
 
 [[bench]]
 name = "bench"
