@@ -1,5 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
-use retroboard::{perft, shakmaty::Chess, RetroBoard};
+use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
+use retroboard::{RetroBoard, perft, shakmaty::Chess};
+use std::hint::black_box;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let fen = "q4N2/1p5k/8/8/6P1/4Q3/1K1PB3/7r b - - 0 1";

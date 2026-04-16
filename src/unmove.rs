@@ -1,9 +1,9 @@
 use std::fmt;
 
 use arrayvec::ArrayVec;
-use lazy_static::lazy_static;
 use regex::Regex;
 use shakmaty::{Role, Square};
+use std::sync::LazyLock;
 
 /// A container for unmoves that can be stored inline on the stack.
 ///
@@ -123,12 +123,11 @@ impl UnMove {
     /// assert!(en_passant.is_en_passant());
     /// assert!(!en_passant.is_unpromotion());
     /// ```
-
     #[allow(clippy::doc_markdown)]
     pub fn from_retro_uci(retro_uci: &str) -> Result<UnMove, ParseRetroUciError> {
-        lazy_static! {
-        static ref UNMOVE_REGEX: Regex = Regex::new(r"^(?P<special_move>[UE]?)(?P<uncapture>[PNBRQ]?)(?P<from>([abcdefgh][1-8]))(?P<to>([abcdefgh][1-8]))$").unwrap();
-        }
+        static UNMOVE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+            Regex::new(r"^(?P<special_move>[UE]?)(?P<uncapture>[PNBRQ]?)(?P<from>([abcdefgh][1-8]))(?P<to>([abcdefgh][1-8]))$").unwrap()
+        });
         UNMOVE_REGEX
             .captures(retro_uci)
             .and_then(|cap| {
