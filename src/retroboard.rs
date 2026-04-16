@@ -233,12 +233,16 @@ impl RetroBoard {
 struct UnMoveGenerator<'a> {
     r: &'a RetroBoard,
     // cached values
-    // possible_uncaptures: ArrayVec<Role, 5>,
+    possible_uncaptures: ArrayVec<Role, 5>,
 }
 
 impl<'a> UnMoveGenerator<'a> {
     pub fn new(r: &'a RetroBoard) -> Self {
-        Self { r }
+        let possible_uncaptures = r.pockets().color(!r.retro_turn()).possible_uncaptures();
+        Self {
+            r,
+            possible_uncaptures,
+        }
     }
 
     pub fn pseudo_legal_unmoves(&self, moves: &mut UnMoveList) {
@@ -488,24 +492,17 @@ impl<'a> UnMoveGenerator<'a> {
 
     // TODO refractor uncapture to uncapture_on, dealing with attacks, unpromotion etc.
     fn gen_uncaptures(&self, from: Square, to: Square, unpromotion: bool, moves: &mut UnMoveList) {
-        for unmove in self
-            .r
-            .pockets()
-            .color(!self.r.retro_turn())
-            .possible_uncaptures()
-            .iter()
-            .map(|r| {
-                UnMove::new(
-                    from,
-                    to,
-                    if unpromotion {
-                        UnPromotion(Some(*r))
-                    } else {
-                        Uncapture(*r)
-                    },
-                )
-            })
-        {
+        for unmove in self.possible_uncaptures.iter().map(|r| {
+            UnMove::new(
+                from,
+                to,
+                if unpromotion {
+                    UnPromotion(Some(*r))
+                } else {
+                    Uncapture(*r)
+                },
+            )
+        }) {
             if !(Bitboard::BACKRANKS.contains(unmove.from)
                 && unmove.uncapture() == Some(Role::Pawn))
             {
