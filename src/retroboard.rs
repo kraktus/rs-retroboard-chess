@@ -426,12 +426,22 @@ impl<'a> UnMoveGenerator<'a> {
     }
 
     fn gen_pieces(&self, moves: &mut UnMoveList) {
-        for from in self.r.us() & !self.r.our(Role::Pawn) {
-            for to in attacks::attacks(from, self.r.board().piece_at(from).unwrap(), self.occupied)
-                & !self.occupied
-            {
-                moves.push(UnMove::new(from, to, Normal));
-                self.gen_uncaptures(from, to, false, moves)
+        for role in [
+            Role::Knight,
+            Role::Bishop,
+            Role::Rook,
+            Role::Queen,
+            Role::King,
+        ] {
+            let piece = Piece {
+                role,
+                color: self.r.retro_turn(),
+            };
+            for from in self.r.our(role) {
+                for to in attacks::attacks(from, piece, self.occupied) & !self.occupied {
+                    moves.push(UnMove::new(from, to, Normal));
+                    self.gen_uncaptures(from, to, false, moves)
+                }
             }
         }
     }
