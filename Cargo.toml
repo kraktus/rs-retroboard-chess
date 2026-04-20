@@ -26,7 +26,7 @@ regex = "1.12"
 arrayvec = "0.7"
 
 [dev-dependencies]
-indoc = "1.0.2"
+indoc = "2.0.4"
 paste = "1.0.6"
 criterion = "0.8"
 
